@@ -2,7 +2,7 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-22 20:44:53
+ # @LastEditTime: 2021-02-22 20:48:24
  # @LastEditors: Ryan
  # @Description: 
  # @FilePath: \VPSReady\init.sh
@@ -83,4 +83,5 @@ if [ -e "/etc/ssh/sshd_config" ]; then
 else
     echo "Do not support none OpenSSH Server!"
 fi
+4.安装 Docker
 echo "ALL Done"

@@ -1,7 +1,7 @@
 <!--
  * @Author: Ryan
  * @Date: 2021-02-22 20:17:25
- * @LastEditTime: 2021-02-22 20:44:10
+ * @LastEditTime: 2021-02-22 20:49:58
  * @LastEditors: Ryan
  * @Description: 
  * @FilePath: \VPSReady\README.md
@@ -12,4 +12,8 @@ VPS初始化脚本
 ## 一键初始化VPS
 ```
 bash -c "$(curl -sSL https://raw.githubusercontent.com/benzBrake/VPSReady/main/init.sh -o -)"
+```
+## 安装 Docker 和 Docker Compose
+```
+bash -c "$(curl -sSL https://raw.githubusercontent.com/benzBrake/VPSReady/main/docker.sh -o -)"
 ```
