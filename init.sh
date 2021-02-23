@@ -2,7 +2,7 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-23 14:55:36
+ # @LastEditTime: 2021-02-23 15:51:19
  # @LastEditors: Ryan
  # @Description: VPS初始化脚本
  # @FilePath: \VPSReady\init.sh
@@ -87,9 +87,9 @@ else
     echo "Do not support none OpenSSH Server!"
 fi
 4.安装 Docker
-if [ -f ./docker.sh ]; then
-    chmod +x ./docker.sh
-    ./docker.sh
+if [ -f ./.init/docker.sh ]; then
+    chmod +x ./.init/docker.sh
+    ./.init/docker.sh
 else
     bash -c "$(curl -sSL "${MIRROR}/docker.sh" -o -)"
 fi
