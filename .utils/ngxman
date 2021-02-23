@@ -2,7 +2,7 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-23 16:12:17
+ # @LastEditTime: 2021-02-23 16:13:04
  # @LastEditors: Ryan
  # @Description: Docker Nginx 管理脚本
  # @FilePath: \VPSReady\.utils\ngxman
@@ -260,8 +260,8 @@ function delHost() {
   if [ "$delete_host" = "" ]; then
     anykeyNothing
   else
-    if [ -f ${NGXCfgDir}/${delete_host}.conf ]; then
-      if rm -f ${NGXCfgDir}/${delete_host}.conf; then
+    if [ -f "${NGXCfgDir}/${delete_host}.conf" ]; then
+      if rm -f "${NGXCfgDir}/${delete_host}.conf"; then
         anykey "[I] ${NGXCfgDir}/${delete_host}.conf was deleted."
       else
         anykey "[E] Cannot remove ${NGXCfgDir}/${delete_host}.conf."
