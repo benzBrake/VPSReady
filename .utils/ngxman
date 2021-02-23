@@ -2,10 +2,10 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-23 15:37:46
+ # @LastEditTime: 2021-02-23 16:10:09
  # @LastEditors: Ryan
  # @Description: Docker Nginx 管理脚本
- # @FilePath: \VPSReady\utils\ngxman.sh
+ # @FilePath: \VPSReady\.utils\ngxman
  # Mod From https://github.com/tahaHichri/nginxse-virtualhost-generator/blob/master/nginxse.sh
 ###
 # Config Start #############################
@@ -107,12 +107,12 @@ function landingNotice() {
 function index() {
   clear
   landingNotice
-  echo  "Functions:"
-  echo  "1.Add Virtual Host"
-  echo  "2.Del Virtual Host"
-  echo  "3.Check Nginx Conf"
-  echo  "4.Restart Nginx"
-  echo  "Q.Exit"
+  echo "Functions:"
+  echo "1.Add Virtual Host"
+  echo "2.Del Virtual Host"
+  echo "3.Check Nginx Conf"
+  echo "4.Restart Nginx"
+  echo "Q.Exit"
 
   read -p "[S] Your Choice:" choice
   case "$choice" in
@@ -136,7 +136,7 @@ function index() {
       exit 0
       ;;
     *)
-      anykey "[W] Choose nothing... Press any key to continue."
+      anykeyNothing
       index
       ;;
   esac
@@ -144,21 +144,21 @@ function index() {
 
 function addHost() {
   # ask for server name
-  read -p "[Q] Server name(s) (e.g., example.com or sub.example.com):   " server_name
+  read -p "[Q] Server name(s) (e.g., example.com or sub.example.com): " server_name
   if [ -f "${NGXCfgDir}/${server_name}.conf" ]; then
-    read -p "[Q] Config file exists, replace? (y/N):  " replace_flag
+    read -p "[Q] Config file exists, replace? (y/N):" replace_flag
     case "${replace_flag}" in
     y | Y) echo -e "[I] OK! Config file will be replaced." ;;
     *) echo -e "[I] Nothing to do." && index ;;
     esac
   fi
-  read -p "[Q] Html files directory absolute path (default: ${NGXWebDir}/${server_name}):  " server_root
+  read -p "[Q] Html files directory absolute path (default: ${NGXWebDir}/${server_name}):" server_root
   echo -e "[Q] Are you using PHP-FPM:\nPHP-FPM can be installed and set a default\nPHP-FPM is usually set in /etc/php-fpm.d/www.conf."
-  read -p "[Q] Enable PHP Support? (Y/n):  " php_support
-  read -p "[Q] Enable Pathinfo Support? (Y/n):  " pathinfo_support
+  read -p "[Q] Enable PHP Support? (Y/n):" php_support
+  read -p "[Q] Enable Pathinfo Support? (Y/n):" pathinfo_support
   echo "[I] Support Rewrite Rules:"
   find "${NGXRwtDir}" -name "*.conf" | sed 's#.*/##' | sed "s#.conf##g"
-  read -p "[Q] Choose your rewrite rules (Enter to skip or input the rewrite rule name)?:  " rewrite_support
+  read -p "[Q] Choose your rewrite rules (Enter to skip or input the rewrite rule name)?:" rewrite_support
 
   # set default document root
   if [ -z "${server_root}" ]; then
@@ -233,7 +233,7 @@ server {
   echo -e "[S] Server block succesfully generated!
 [I] You can save the generated configuration into a new (.conf) file
 [I] Server block configuration file to create: '${NGXCfgDir}/${server_name}.conf'"
-  read -p "[Q] Create and Save '${server_name}.conf'? (Y/n) if you choose 'N' the config will be displayed.  " savefile
+  read -p "[Q] Create and Save '${server_name}.conf'? (Y/n) if you choose 'N' the config will be displayed." savefile
 
   case "$savefile" in
   n | N) echo -e "${serverblock}" ; anykey ;;
@@ -254,7 +254,24 @@ server {
 }
 
 function delHost() {
-  echo "[I] Still in development"
+  echo "[I] Installed hosts:"
+  find "${NGXCfgDir}" -name "*.conf" | sed 's#.*/##' | sed "s#.conf##g"
+  read -p "[Q] Choose the virtual host that you want to delete (Enter to skip)?:" delete_host
+  if [ "$delete_host" = "" ]; then
+    anykeyNothing
+  else
+    if [ -f ${NGXCfgDir}/${delete_host}.conf ]; then
+      if rm -f ${NGXCfgDir}/${delete_host}.conf; then
+        anykey "[I] ${NGXCfgDir}/${delete_host}.conf was deleted."
+      else
+        anykey "[E] Cannot remove ${NGXCfgDir}/${delete_host}.conf."
+      return 1
+      fi
+    else
+      return 1;
+    fi
+  fi
+  index
 }
 
 function checkConf() {
@@ -272,8 +289,11 @@ function restartNginx {
 }
 
 function anykey() {
-  MSG=${1-[S] Press any key to confinue...}
-  read -p "${MSG}"
+  read -p "${1-[I]} Press any key to confinue..."
+}
+
+function anykeyNothing() {
+  anykey "[W] Choose nothing..."
 }
 
 index
