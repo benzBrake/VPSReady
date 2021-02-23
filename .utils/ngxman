@@ -2,7 +2,7 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-23 16:13:04
+ # @LastEditTime: 2021-02-23 16:19:28
  # @LastEditors: Ryan
  # @Description: Docker Nginx 管理脚本
  # @FilePath: \VPSReady\.utils\ngxman
@@ -195,21 +195,21 @@ function addHost() {
       rewriteblock=""
     fi
   fi
-
   # detect ssl certificate
-  if [ -f "${NGXBaseDir}${NGXCrtDir}/${server_name}.crt" ] && [ -f "${NGXBaseDir}${NGXCrtDir}/${server_name}.key" ]; then
+  if [ -f "${NGXCrtDir}/${server_name}.crt" ] && [ -f "${NGXCrtDir}/${server_name}.key" ]; then
+    echo "[I] SSL certificate was detected. SSL will be configured." 
     sslblock="#SSL Configuration
     listen 443 ssl;
-    ssl_certificate ${NGXBaseDir}${NGXCrtDir}/${server_name}.crt;
-    ssl_certificate_key ${NGXBaseDir}${NGXCrtDir}/${server_name}.key;
+    ssl_certificate ${NGXCrtDir}/${server_name}.crt;
+    ssl_certificate_key ${NGXCrtDir}/${server_name}.key;
     ssl_session_timeout 5m;
     ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
     ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:HIGH:!aNULL:!MD5:!RC4:!DHE;
-    ssl_prefer_server_ciphers on;\n"
+    ssl_prefer_server_ciphers on;"
   else
     sslblock=""
   fi
-
+  
   serverblock="
 server {
     listen 80 ;
@@ -217,7 +217,7 @@ server {
     server_name ${server_name};
 
     ${sslblock}
-
+    
     root ${server_root};
     # Add index.php to the list if you are using PHP
     index index.php index.html index.htm index.nginx-debian.html;
