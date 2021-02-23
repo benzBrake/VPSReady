@@ -2,7 +2,7 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-23 15:08:23
+ # @LastEditTime: 2021-02-23 15:28:38
  # @LastEditors: Ryan
  # @Description: Docker Nginx 管理脚本
  # @FilePath: \VPSReady\utils\ngxman.sh
@@ -13,11 +13,11 @@ DESPCN=$(lsb_release -si)
 
 # try locating NGINX install dir
 NGXInstallDir="/data/web"
-NGXCfgDir="/conf.d"
-NGXExtDir="/extra"
-NGXRwtDir="/rewrite"
+NGXCfgDir="/webconf"
 NGXWebDir="/webapps"
 NGXCrtDir="/webssls"
+NGXExtDir="/nginx-extra"
+NGXRwtDir="/nginx-rewrite"
 
 # docker-compose config file
 CMPFileDir="/data/docker-compose.yml"
