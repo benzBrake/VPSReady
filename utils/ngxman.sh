@@ -2,7 +2,7 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-23 15:33:17
+ # @LastEditTime: 2021-02-23 15:34:14
  # @LastEditors: Ryan
  # @Description: Docker Nginx 管理脚本
  # @FilePath: \VPSReady\utils\ngxman.sh
@@ -21,7 +21,6 @@ NGXRwtDir="${NGXBaseDir}/nginx-rewrite"
 CMPFileDir="/data/docker-compose.yml"
 # Config End ###############################
 
-# Concat Value
 # Prepare php enable config
 if [ ! -f "${NGXExtDir}/enable-php.conf" ]; then
   cat >"${NGXExtDir}/enable-php.conf" <<EOF
