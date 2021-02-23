@@ -2,7 +2,7 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-22 20:48:24
+ # @LastEditTime: 2021-02-23 14:34:18
  # @LastEditors: Ryan
  # @Description: 
  # @FilePath: \VPSReady\init.sh
@@ -32,7 +32,12 @@ if [ -e "/etc/ssh/sshd_config" ]; then
         [[ ! -f "$PKF" ]] && break
         PKF="/tmp/$RANDOM.pub"
     done
-    curl -o $PKF ${MIRROR}/pub/xiaoji.pub
+    # 有本地用本地（Git clone 项目的时候本地有key），没有就从 Mirror 下载
+    if [ -f ./pub/xiaoji.pub ]; then
+        cp ./pub/xiaoji.pub $PKF
+    else
+        curl -sSL ${MIRROR}/pub/xiaoji.pub -o $PKF
+    fi
     if [ ! -f ~/.ssh/authorized_keys ]; then
         cat $PKF >> ~/.ssh/authorized_keys
     else
