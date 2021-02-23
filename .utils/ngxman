@@ -2,7 +2,7 @@
 ###
 # @Author: Ryan
 # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-23 19:57:26
+ # @LastEditTime: 2021-02-23 20:02:06
  # @LastEditors: Ryan
 # @Description: Docker Nginx 管理脚本
  # @FilePath: \VPSReady\.utils\ngxman
@@ -218,7 +218,7 @@ function addHost() {
   2)
     read -p "[Q] What website do you want to redirect to (eg.https://baidu.com): " redirect_url
     redirectblock="# Redirect to another site
-    rewrite ^(.*)\$ ${redirect_url} \$1 permanent;"
+    rewrite ^(.*)\$ ${redirect_url}\$1 permanent;"
     ;;
   3)
     read -p "[Q] What website do you want to proxy to (eg.https://baidu.com): " proxy_url
@@ -302,7 +302,9 @@ function addHost() {
     ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
     ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:HIGH:!aNULL:!MD5:!RC4:!DHE;
     ssl_prefer_server_ciphers on;
-    rewrite ^(.*)\$ https://\$host\$1 permanent;"
+    if (\$scheme = http) {
+      return 301 https://\$server_name\$request_uri;
+    }"
   else
     sslblock="\n"
   fi
