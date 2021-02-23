@@ -2,7 +2,7 @@
 ###
 # @Author: Ryan
 # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-23 17:22:54
+ # @LastEditTime: 2021-02-23 17:29:05
  # @LastEditors: Ryan
 # @Description: Docker Nginx 管理脚本
  # @FilePath: \VPSReady\.utils\ngxman
@@ -109,7 +109,7 @@ function landingNotice() {
 function index() {
   clear
   landingNotice
-  echo "Functions:"
+  echo "Functions: "
   echo "1.Add Virtual Host"
   echo "2.Delete Virtual Host"
   echo "3.Enable Virtual Host"
@@ -118,7 +118,7 @@ function index() {
   echo "6.Restart Nginx"
   echo "Q.Exit"
 
-  read -p "[S] Your Choice:" choice
+  read -p "[S] Your Choice: " choice
   case "$choice" in
   1)
     addHost
@@ -158,21 +158,27 @@ function addHost() {
   # ask for server name
   read -p "[Q] Server name(s) (e.g., example.com or sub.example.com): " server_name
   if [ -f "${NGXCfgDir}/${server_name}.conf" ]; then
-    read -p "[Q] Config file exists, replace? (y/N):" replace_flag
+    read -p "[Q] Config file exists, replace? (y/N): " replace_flag
     case "${replace_flag}" in
     y | Y) echo -e "[I] OK! Config file will be replaced." ;;
     *) echo -e "[I] Nothing to do." && index ;;
     esac
   fi
 
-  read -p "[Q] Your host type (normal/redirect/proxy, Defaul is normal):" host_type
-  [ -z "${host_type}" ] && host_type="normal"
-  if [ "${host_type}" = "redirect" ]; then
-    read -p "[Q] What website do you want to redirect to (eg.https://baidu.com)" redirect_url
+  echo "[Q] Chosee your host type: "
+  echo "1.normal(default)"
+  echo "2.redirect"
+  echo "3.proxy"
+  read -p "[S] Your choice: " host_type
+  [ -z "${host_type}" ] && host_type="1"
+  case "${host_type}" in
+    2)
+    read -p "[Q] What website do you want to redirect to (eg.https://baidu.com): " redirect_url
     redirectblock="# Redirect to another site
     rewrite ^(.*)\$ ${redirect_url} \$1 permanent;"
-  elif [ "${host_type}" = "proxy" ]; then
-    read -p "[Q] What website do you want to proxy to (eg.https://baidu.com)" proxy_url
+    ;;
+    3)
+    read -p "[Q] What website do you want to proxy to (eg.https://baidu.com): " proxy_url
     proxyblock="# proxy to another site
     location / {
       proxy_pass ${proxy_url}\$request_uri;
@@ -184,14 +190,15 @@ function addHost() {
       proxy_cache_valid 301 1h;
       proxy_cache_valid any 1m;
     }"
-  elif [ "${host_type}" = "proxy" ]; then
-    read -p "[Q] Html files directory absolute path (default: ${NGXWebDir}/${server_name}):" server_root
+    ;;
+    1)
+    read -p "[Q] Html files directory absolute path (default: ${NGXWebDir}/${server_name}): " server_root
     echo -e "[Q] Are you using PHP-FPM:\nPHP-FPM can be installed and set a default\nPHP-FPM is usually set in /etc/php-fpm.d/www.conf."
-    read -p "[Q] Enable PHP Support? (Y/n):" php_support
-    read -p "[Q] Enable Pathinfo Support? (Y/n):" pathinfo_support
-    echo "[I] Support Rewrite Rules:"
+    read -p "[Q] Enable PHP Support? (Y/n): " php_support
+    read -p "[Q] Enable Pathinfo Support? (Y/n): " pathinfo_support
+    echo "[I] Support Rewrite Rules: "
     find "${NGXRwtDir}" -name "*.conf" | sed 's#.*/##' | sed "s#.conf##g"
-    read -p "[Q] Choose your rewrite rules (Enter to skip or input the rewrite rule name)?:" rewrite_support
+    read -p "[Q] Choose your rewrite rules (Enter to skip or input the rewrite rule name)?: " rewrite_support
 
     # set default document root
     [ -z "${server_root}" ] && server_root="${NGXWebDir}/${server_name}"
@@ -218,6 +225,7 @@ function addHost() {
       esac
       ;;
     esac
+    
     # set rewrite rules
     if [ -z "${rewrite_support}" ]; then
       echo "[I] Rewrite rule not selected."
@@ -231,10 +239,12 @@ function addHost() {
         rewriteblock=""
       fi
     fi
-  else
+    ;;
+    *)
     anykeyNothing
     index
-  fi
+    ;;
+  esac
   # detect ssl certificate
   if [ -f "${NGXCrtDir}/${server_name}.crt" ] && [ -f "${NGXCrtDir}/${server_name}.key" ]; then
     echo "[I] SSL certificate was detected. SSL will be configured."
@@ -266,7 +276,7 @@ server {
   echo -e "[S] Server block succesfully generated!
 [I] You can save the generated configuration into a new (.conf) file
 [I] Server block configuration file to create: '${NGXCfgDir}/${server_name}.conf'"
-  read -p "[Q] Create and Save '${server_name}.conf'? (Y/n) if you choose 'N' the config will be displayed:" savefile
+  read -p "[Q] Create and Save '${server_name}.conf'? (Y/n) if you choose 'N' the config will be displayed: " savefile
 
   case "$savefile" in
   n | N)
@@ -284,14 +294,15 @@ server {
 }
 
 function delHost() {
-  echo "[I] Installed hosts:"
+  echo "[I] Installed hosts: "
   find "${NGXCfgDir}" -name "*.conf" | sed 's#.*/##' | sed "s#.conf##g"
-  read -p "[Q] Choose the virtual host that you want to delete (Enter to skip)?:" delete_host
+  read -p "[Q] Choose the virtual host that you want to delete (Enter to skip)?: " delete_host
   if [ "$delete_host" = "" ]; then
     anykeyNothing
   else
     if [ -f "${NGXCfgDir}/${delete_host}.conf" ]; then
       if rm -f "${NGXCfgDir}/${delete_host}.conf"; then
+        checkAndRestart
         anykey "[I] ${NGXCfgDir}/${delete_host}.conf was deleted."
       else
         anykey "[E] Cannot remove ${NGXCfgDir}/${delete_host}.conf."
@@ -305,9 +316,9 @@ function delHost() {
 }
 
 function enableHost() {
-  echo "[I] Current disabled hosts:"
+  echo "[I] Current disabled hosts: "
   find "${NGXDisDir}" -name "*.conf" | sed 's#.*/##' | sed "s#.conf##g"
-  read -p "[Q] Choose the virtual host that you want to enable (Enter to skip)?:" enable_host
+  read -p "[Q] Choose the virtual host that you want to enable (Enter to skip)?: " enable_host
   if [ "$enable_host" = "" ]; then
     anykeyNothing
   else
@@ -328,9 +339,9 @@ function enableHost() {
 }
 
 function disableHost() {
-  echo "[I] Current enabled hosts:"
+  echo "[I] Current enabled hosts: "
   find "${NGXCfgDir}" -name "*.conf" | sed 's#.*/##' | sed "s#.conf##g"
-  read -p "[Q] Choose the virtual host that you want disable (Enter to skip)?:" disable_host
+  read -p "[Q] Choose the virtual host that you want disable (Enter to skip)?: " disable_host
   if [ "$disable_host" = "" ]; then
     anykeyNothing
   else
