@@ -2,11 +2,14 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-23 14:51:40
+ # @LastEditTime: 2021-02-23 14:54:24
  # @LastEditors: Ryan
  # @Description: VPS初始化脚本
  # @FilePath: \VPSReady\init.sh
 ###
+randomNum() {
+    awk -v min=10000 -v max=99999 'BEGIN{srand(); print int(min+rand()*(max-min+1))}'
+}
 if [ -z "$(command -v apt-get)" ]; then
     exit 1
 fi
@@ -27,10 +30,10 @@ if [ -e "/etc/ssh/sshd_config" ]; then
     cp -f /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
     #添加公钥 xiaoji
     mkdir -p /tmp ~/.ssh
-    PUBKeyFile="/tmp/$RANDOM.pub"
+    PUBKeyFile="/tmp/$(randomNum).pub"
     while :; do echo
         [ ! -f "${PUBKeyFile}" ] && break
-        PUBKeyFile="/tmp/$RANDOM.pub"
+        PUBKeyFile="/tmp/$(randomNum).pub"
     done
     # 有本地用本地（Git clone 项目的时候本地有key），没有就从 Mirror 下载
     if [ -f ./pub/xiaoji.pub ]; then
