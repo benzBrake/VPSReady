@@ -2,21 +2,21 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-23 14:34:18
+ # @LastEditTime: 2021-02-23 14:51:40
  # @LastEditors: Ryan
- # @Description: 
+ # @Description: VPS初始化脚本
  # @FilePath: \VPSReady\init.sh
 ###
 if [ -z "$(command -v apt-get)" ]; then
     exit 1
 fi
-MIRROR=$(echo ${MIRROR-https://raw.githubusercontent.com/benzBrake/VPSReady/main} | sed 's#/$##g')
+MIRROR=$(echo "${MIRROR-https://raw.githubusercontent.com/benzBrake/VPSReady/main}" | sed 's#/$##g')
 # 0.询问安装内容
 # 1.安装基础软件包
 apt-get update
 apt-get -y install curl ca-certificates vim
 # 2.设置时区
-if [ ! -z "$(command -v timedatectl)" ]; then
+if [ -n "$(command -v timedatectl)" ]; then
     timedatectl set-timezone Asia/Shanghai
 else
     ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
@@ -27,48 +27,43 @@ if [ -e "/etc/ssh/sshd_config" ]; then
     cp -f /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
     #添加公钥 xiaoji
     mkdir -p /tmp ~/.ssh
-    PKF="/tmp/$RANDOM.pub"
+    PUBKeyFile="/tmp/$RANDOM.pub"
     while :; do echo
-        [[ ! -f "$PKF" ]] && break
-        PKF="/tmp/$RANDOM.pub"
+        [ ! -f "${PUBKeyFile}" ] && break
+        PUBKeyFile="/tmp/$RANDOM.pub"
     done
     # 有本地用本地（Git clone 项目的时候本地有key），没有就从 Mirror 下载
     if [ -f ./pub/xiaoji.pub ]; then
-        cp ./pub/xiaoji.pub $PKF
+        cp ./pub/xiaoji.pub ${PUBKeyFile}
     else
-        curl -sSL ${MIRROR}/pub/xiaoji.pub -o $PKF
+        curl -sSL "${MIRROR}/pub/xiaoji.pub" -o "${PUBKeyFile}"
     fi
     if [ ! -f ~/.ssh/authorized_keys ]; then
-        cat $PKF >> ~/.ssh/authorized_keys
+        cat ${PUBKeyFile} >> ~/.ssh/authorized_keys
     else
-        AUTHSTR=$(cat ~/.ssh/authorized_keys)
-        PKFSTR=$(cat $PKF | sed 's@^\s*@@;s@\s*$@@')
-        COMPARE=$(echo $AUTHSTR | grep "$PKFSTR")
-        [[ "$COMPARE" == "" ]] && {
-            cat $PKF >> ~/.ssh/authorized_keys
+        AuthKeyStr=$(cat ~/.ssh/authorized_keys)
+        PUBKeyStr=$(< ${PUBKeyFile} sed 's@^\s*@@;s@\s*$@@')
+        CompareResult=$(echo "${AuthKeyStr}" | grep "${PUBKeyStr}")
+        [ "$CompareResult" = "" ] && {
+            cat ${PUBKeyFile} >> ~/.ssh/authorized_keys
         }
         chmod 600 ~/.ssh/authorized_keys
     fi
     # 仅公钥登录
-    grep -i '^PasswordAuthentication\s\+no' /etc/ssh/sshd_config >/dev/null
-    [[ $? -ne 0 ]] && {
-        grep -i  '^PasswordAuthentication\s\+yes'  /etc/ssh/sshd_config >/dev/null
-        if [[ $? -eq 0 ]]; then
+    if grep -i '^PasswordAuthentication\s\+no' /etc/ssh/sshd_config >/dev/null; then
+        if grep -i  '^PasswordAuthentication\s\+yes'  /etc/ssh/sshd_config >/dev/null; then
             sed -i "s@^PasswordAuthentication\s\+yes@PasswordAuthentication no@" /etc/ssh/sshd_config
         else
-            grep -i  '^#PasswordAuthentication.*'  /etc/ssh/sshd_config >/dev/null
-            if [[ $? -eq 0 ]]; then
+            if grep -i  '^#PasswordAuthentication.*'  /etc/ssh/sshd_config >/dev/null; then
                 sed -i "s@^#PasswordAuthentication.*@&\nPasswordAuthentication no@" /etc/ssh/sshd_config
             else
                 echo 'PasswordAuthentication no'>> /etc/ssh/sshd_config
             fi
         fi
-    }
+    fi
     # SSH端口
-    grep "^[pP][oO][rR][tT]\s\+$aa" /etc/ssh/sshd_config >/dev/null
-    if test $? -ne 0 ; then
-        grep '#[pP][oO][rR][tT].*' /etc/ssh/sshd_config >/dev/null
-        if [ $? -ne 0 ]; then
+    if grep "^[pP][oO][rR][tT]\s\+$aa" /etc/ssh/sshd_config >/dev/null; then
+        if grep '#[pP][oO][rR][tT].*' /etc/ssh/sshd_config >/dev/null; then
             sed -i "5aPort 33022" /etc/ssh/sshd_config
         else
             sed -i "s@^#port.*@&\nPort 33022@i" /etc/ssh/sshd_config
@@ -84,9 +79,15 @@ if [ -e "/etc/ssh/sshd_config" ]; then
         service ssh restart
     fi
     #清理垃圾
-    rm -rf $PKF
+    rm -rf ${PUBKeyFile}
 else
     echo "Do not support none OpenSSH Server!"
 fi
 4.安装 Docker
+if [ -f ./docker.sh ]; then
+    chmod +x ./docker.sh
+    ./docker.sh
+else
+    bash -c "$(curl -sSL "${MIRROR}/docker.sh" -o -)"
+fi
 echo "ALL Done"
