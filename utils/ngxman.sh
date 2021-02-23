@@ -2,7 +2,7 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-23 15:34:14
+ # @LastEditTime: 2021-02-23 15:36:59
  # @LastEditors: Ryan
  # @Description: Docker Nginx 管理脚本
  # @FilePath: \VPSReady\utils\ngxman.sh
@@ -20,6 +20,14 @@ NGXExtDir="${NGXBaseDir}/nginx-extra"
 NGXRwtDir="${NGXBaseDir}/nginx-rewrite"
 CMPFileDir="/data/docker-compose.yml"
 # Config End ###############################
+
+# Create Directory
+[ ! -d "${NGXBaseDir}" ] && mkdir -p ${NGXBaseDir}
+[ ! -d "${NGXCfgDir}" ] && mkdir -p ${NGXCfgDir}
+[ ! -d "${NGXWebDir}" ] && mkdir -p ${NGXWebDir}
+[ ! -d "${NGXCrtDir}" ] && mkdir -p ${NGXCrtDir}
+[ ! -d "${NGXExtDir}" ] && mkdir -p ${NGXExtDir}
+[ ! -d "${NGXRwtDir}" ] && mkdir -p ${NGXRwtDir}
 
 # Prepare php enable config
 if [ ! -f "${NGXExtDir}/enable-php.conf" ]; then
