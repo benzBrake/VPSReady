@@ -2,15 +2,12 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-23 15:36:59
+ # @LastEditTime: 2021-02-23 15:37:46
  # @LastEditors: Ryan
  # @Description: Docker Nginx 管理脚本
  # @FilePath: \VPSReady\utils\ngxman.sh
  # Mod From https://github.com/tahaHichri/nginxse-virtualhost-generator/blob/master/nginxse.sh
 ###
-# OS destribution
-DESPCN=$(lsb_release -si)
-
 # Config Start #############################
 NGXBaseDir="/data/web"
 NGXCfgDir="${NGXBaseDir}/webconf"
@@ -20,6 +17,9 @@ NGXExtDir="${NGXBaseDir}/nginx-extra"
 NGXRwtDir="${NGXBaseDir}/nginx-rewrite"
 CMPFileDir="/data/docker-compose.yml"
 # Config End ###############################
+
+# OS destribution
+DESPCN=$(lsb_release -si)
 
 # Create Directory
 [ ! -d "${NGXBaseDir}" ] && mkdir -p ${NGXBaseDir}
