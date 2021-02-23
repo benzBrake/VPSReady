@@ -1,5 +1,13 @@
 #!/bin/bash
-
+###
+ # @Author: Ryan
+ # @Date: 2021-02-22 20:18:53
+ # @LastEditTime: 2021-02-23 15:08:23
+ # @LastEditors: Ryan
+ # @Description: Docker Nginx 管理脚本
+ # @FilePath: \VPSReady\utils\ngxman.sh
+ # Mod From https://github.com/tahaHichri/nginxse-virtualhost-generator/blob/master/nginxse.sh
+###
 # OS destribution
 DESPCN=$(lsb_release -si)
 
@@ -45,10 +53,27 @@ EOF
 fi
 
 # Prepare typecho rewrite rule
+# Typecho
 if [ ! -f "${NGXInstallDir}${NGXRwtDir}/typecho.conf" ]; then
   cat >${NGXInstallDir}${NGXRwtDir}/typecho.conf <<EOF
 if (!-e \$request_filename) {
     rewrite ^(.*)\$ /index.php$1 last;
+}
+EOF
+fi
+# WordPress
+if [ ! -f "${NGXInstallDir}${NGXRwtDir}/wordpress.conf" ]; then
+  cat >${NGXInstallDir}${NGXRwtDir}/wordpress.conf <<EOF
+location / {
+    if (-f \$request_filename/index.html){
+        rewrite (.*) $1/index.html break;
+    }
+    if (-f \$request_filename/index.php){
+        rewrite (.*) $1/index.php;
+    }
+    if (!-f \$request_filename){
+        rewrite (.*) /index.php;
+    }
 }
 EOF
 fi
@@ -63,7 +88,7 @@ function landingNotice() {
   tput clear
   tput cup $middle_row $middle_col
   tput bold
-  echo -e $fallbackNotice
+  echo -e "$fallbackNotice"
   echo -e "This script will help you manage NGINX Server Block config Files.\n"
   echo -e "This is a free, open-source software originally released by hishri.com\n"
   echo -e "IMPORTANT: -The script WILL NOT delete/modify any existing config files"
@@ -110,8 +135,6 @@ function index() {
   esac
 }
 
-
-
 function addHost() {
   # ask for server name
   read -p "[Q] Server name(s) (e.g., example.com or sub.example.com):   " server_name
@@ -119,7 +142,7 @@ function addHost() {
     read -p "[Q] Config file exists, replace? (y/N):  " replace_flag
     case "${replace_flag}" in
     y | Y) echo -e "[I] OK! Config file will be replaced." ;;
-    *) echo -e "[I] Nothing to do." && exit 1 ;;
+    *) echo -e "[I] Nothing to do." && index ;;
     esac
   fi
   read -p "[Q] Html files directory absolute path (default: ${NGXInstallDir}${NGXWebDir}/${server_name}):  " server_root
@@ -127,7 +150,7 @@ function addHost() {
   read -p "[Q] Enable PHP Support? (Y/n):  " php_support
   read -p "[Q] Enable Pathinfo Support? (Y/n):  " pathinfo_support
   echo "[I] Support Rewrite Rules:"
-  ls "${NGXInstallDir}${NGXRwtDir}" | sed "s#.conf##g"
+  find "${NGXInstallDir}${NGXRwtDir}" -name "*.conf" | sed 's#.*/##' | sed "s#.conf##g"
   read -p "[Q] Choose your rewrite rules (Enter to skip or input the rewrite rule name)?:  " rewrite_support
 
   # set default document root
