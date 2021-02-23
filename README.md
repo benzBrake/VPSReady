@@ -1,7 +1,7 @@
 <!--
  * @Author: Ryan
  * @Date: 2021-02-22 20:17:25
- * @LastEditTime: 2021-02-22 20:49:58
+ * @LastEditTime: 2021-02-23 15:50:07
  * @LastEditors: Ryan
  * @Description: 
  * @FilePath: \VPSReady\README.md
@@ -9,11 +9,13 @@
 # VPSReady
 VPS初始化脚本
 因为 CentOS 被切换到 Stream，估计以后写SHELL都不考虑RHEL系了。
-## 一键初始化VPS
+## 安装脚本
 ```
-bash -c "$(curl -sSL https://raw.githubusercontent.com/benzBrake/VPSReady/main/init.sh -o -)"
+apt-get udpate && apt-get -y install git
+git clone https://github.com/benzBrake/VPSReady /data
 ```
-## 安装 Docker 和 Docker Compose
+## 使用
+### 初始化 VPS
 ```
-bash -c "$(curl -sSL https://raw.githubusercontent.com/benzBrake/VPSReady/main/docker.sh -o -)"
+bash init.sh
 ```
