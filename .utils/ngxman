@@ -2,7 +2,7 @@
 ###
 # @Author: Ryan
 # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-23 16:37:45
+ # @LastEditTime: 2021-02-23 17:22:54
  # @LastEditors: Ryan
 # @Description: Docker Nginx 管理脚本
  # @FilePath: \VPSReady\.utils\ngxman
@@ -164,48 +164,76 @@ function addHost() {
     *) echo -e "[I] Nothing to do." && index ;;
     esac
   fi
-  read -p "[Q] Html files directory absolute path (default: ${NGXWebDir}/${server_name}):" server_root
-  echo -e "[Q] Are you using PHP-FPM:\nPHP-FPM can be installed and set a default\nPHP-FPM is usually set in /etc/php-fpm.d/www.conf."
-  read -p "[Q] Enable PHP Support? (Y/n):" php_support
-  read -p "[Q] Enable Pathinfo Support? (Y/n):" pathinfo_support
-  echo "[I] Support Rewrite Rules:"
-  find "${NGXRwtDir}" -name "*.conf" | sed 's#.*/##' | sed "s#.conf##g"
-  read -p "[Q] Choose your rewrite rules (Enter to skip or input the rewrite rule name)?:" rewrite_support
 
-  # set default document root
-  if [ -z "${server_root}" ]; then
-    server_root="${NGXWebDir}/${server_name}"
-  fi
+  read -p "[Q] Your host type (normal/redirect/proxy, Defaul is normal):" host_type
+  [ -z "${host_type}" ] && host_type="normal"
+  if [ "${host_type}" = "redirect" ]; then
+    read -p "[Q] What website do you want to redirect to (eg.https://baidu.com)" redirect_url
+    redirectblock="# Redirect to another site
+    rewrite ^(.*)\$ ${redirect_url} \$1 permanent;"
+  elif [ "${host_type}" = "proxy" ]; then
+    read -p "[Q] What website do you want to proxy to (eg.https://baidu.com)" proxy_url
+    proxyblock="# proxy to another site
+    location / {
+      proxy_pass ${proxy_url}\$request_uri;
+      proxy_set_header Host \$http_host;
+      proxy_buffers 256 4k;
+      proxy_max_temp_file_size 0;
+      proxy_connect_timeout 30;
+      proxy_cache_valid 200 302 10m;
+      proxy_cache_valid 301 1h;
+      proxy_cache_valid any 1m;
+    }"
+  elif [ "${host_type}" = "proxy" ]; then
+    read -p "[Q] Html files directory absolute path (default: ${NGXWebDir}/${server_name}):" server_root
+    echo -e "[Q] Are you using PHP-FPM:\nPHP-FPM can be installed and set a default\nPHP-FPM is usually set in /etc/php-fpm.d/www.conf."
+    read -p "[Q] Enable PHP Support? (Y/n):" php_support
+    read -p "[Q] Enable Pathinfo Support? (Y/n):" pathinfo_support
+    echo "[I] Support Rewrite Rules:"
+    find "${NGXRwtDir}" -name "*.conf" | sed 's#.*/##' | sed "s#.conf##g"
+    read -p "[Q] Choose your rewrite rules (Enter to skip or input the rewrite rule name)?:" rewrite_support
 
-  # enable php support
-  case "${php_support}" in
-  n | N) echo -p "[I] N is selected, Ignoring PHP" ;;
-  *)
-    case "${pathinfo_support}" in
-    n | N)
-      phpblock="# Enable php
-    include ${NGXExtDir}/enable-php.conf;"
-      ;;
+    # set default document root
+    [ -z "${server_root}" ] && server_root="${NGXWebDir}/${server_name}"
+    rootblock="root ${server_root};
+    # Add index.php to the list if you are using PHP
+    index index.php index.html index.htm index.nginx-debian.html;
+    location / {
+      try_files \$uri \$uri/ =404;
+    }"
+
+    # enable php support
+    case "${php_support}" in
+    n | N) echo -p "[I] N is selected, Ignoring PHP" ;;
     *)
-      phpblock="# Enable php with pathinfo support
+      case "${pathinfo_support}" in
+      n | N)
+        phpblock="# Enable php
+    include ${NGXExtDir}/enable-php.conf;"
+        ;;
+      *)
+        phpblock="# Enable php with pathinfo support
     include ${NGXExtDir}/enable-php-pathinfo.conf;"
+        ;;
+      esac
       ;;
     esac
-    ;;
-  esac
-
-  # set rewrite rules
-  if [ -z "${rewrite_support}" ]; then
-    echo "[I] Rewrite rule not selected."
-    rewriteblock=""
-  else
-    if [ -f "${NGXRwtDir}/${rewrite_support}.conf" ]; then
-      rewriteblock="# Enable Rewrite
-    include ${NGXRwtDir}/${rewrite_support}.conf;"
-    else
-      echo "[W] Rewrite rules not exists, skipped!"
+    # set rewrite rules
+    if [ -z "${rewrite_support}" ]; then
+      echo "[I] Rewrite rule not selected."
       rewriteblock=""
+    else
+      if [ -f "${NGXRwtDir}/${rewrite_support}.conf" ]; then
+        rewriteblock="# Enable Rewrite
+    include ${NGXRwtDir}/${rewrite_support}.conf;"
+      else
+        echo "[W] Rewrite rules not exists, skipped!"
+        rewriteblock=""
+      fi
     fi
+  else
+    anykeyNothing
+    index
   fi
   # detect ssl certificate
   if [ -f "${NGXCrtDir}/${server_name}.crt" ] && [ -f "${NGXCrtDir}/${server_name}.key" ]; then
@@ -227,25 +255,18 @@ server {
     listen 80 ;
     listen [::]:80 ;
     server_name ${server_name};
-
     ${sslblock}
-    
-    root ${server_root};
-    # Add index.php to the list if you are using PHP
-    index index.php index.html index.htm index.nginx-debian.html;
-    location / {
-      try_files \$uri \$uri/ =404;
-    }
-       
+    ${rootblock}
+    ${redirectblock}
+    ${proxyblock}
     ${phpblock}
-
     ${rewriteblock}
 }"
 
   echo -e "[S] Server block succesfully generated!
 [I] You can save the generated configuration into a new (.conf) file
 [I] Server block configuration file to create: '${NGXCfgDir}/${server_name}.conf'"
-  read -p "[Q] Create and Save '${server_name}.conf'? (Y/n) if you choose 'N' the config will be displayed." savefile
+  read -p "[Q] Create and Save '${server_name}.conf'? (Y/n) if you choose 'N' the config will be displayed:" savefile
 
   case "$savefile" in
   n | N)
@@ -353,6 +374,7 @@ function checkAndRestart() {
     echo "[E] Configuration seems to be not ok."
   fi
 }
+
 function anykey() {
   read -p "${1-[I]} Press any key to confinue..."
 }
