@@ -1,12 +1,12 @@
 #!/bin/bash
 ###
- # @Author: Ryan
- # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-23 16:19:28
+# @Author: Ryan
+# @Date: 2021-02-22 20:18:53
+ # @LastEditTime: 2021-02-23 16:37:45
  # @LastEditors: Ryan
- # @Description: Docker Nginx 管理脚本
+# @Description: Docker Nginx 管理脚本
  # @FilePath: \VPSReady\.utils\ngxman
- # Mod From https://github.com/tahaHichri/nginxse-virtualhost-generator/blob/master/nginxse.sh
+# Mod From https://github.com/tahaHichri/nginxse-virtualhost-generator/blob/master/nginxse.sh
 ###
 # Config Start #############################
 NGXBaseDir="/data/web"
@@ -15,6 +15,7 @@ NGXWebDir="${NGXBaseDir}/webapps"
 NGXCrtDir="${NGXBaseDir}/webssls"
 NGXExtDir="${NGXBaseDir}/nginx-extra"
 NGXRwtDir="${NGXBaseDir}/nginx-rewrite"
+NGXDisDir="${NGXBaseDir}/sites-available"
 CMPFileDir="/data/docker-compose.yml"
 # Config End ###############################
 
@@ -28,6 +29,7 @@ DESPCN=$(lsb_release -si)
 [ ! -d "${NGXCrtDir}" ] && mkdir -p ${NGXCrtDir}
 [ ! -d "${NGXExtDir}" ] && mkdir -p ${NGXExtDir}
 [ ! -d "${NGXRwtDir}" ] && mkdir -p ${NGXRwtDir}
+[ ! -d "${NGXDisDir}" ] && mkdir -p ${NGXDisDir}
 
 # Prepare php enable config
 if [ ! -f "${NGXExtDir}/enable-php.conf" ]; then
@@ -109,36 +111,46 @@ function index() {
   landingNotice
   echo "Functions:"
   echo "1.Add Virtual Host"
-  echo "2.Del Virtual Host"
-  echo "3.Check Nginx Conf"
-  echo "4.Restart Nginx"
+  echo "2.Delete Virtual Host"
+  echo "3.Enable Virtual Host"
+  echo "4.Disable Virtual Host"
+  echo "5.Check Nginx Conf"
+  echo "6.Restart Nginx"
   echo "Q.Exit"
 
   read -p "[S] Your Choice:" choice
   case "$choice" in
-    1)
-      addHost
-      index
-      ;;
-    2)
-      delHost
-      index
-      ;;
-    3)
-      checkConf
-      index
-      ;;
-    4)
-      restartNginx
-      index
-      ;;
-    q | Q)
-      exit 0
-      ;;
-    *)
-      anykeyNothing
-      index
-      ;;
+  1)
+    addHost
+    index
+    ;;
+  2)
+    delHost
+    index
+    ;;
+  3)
+    enableHost
+    index
+    ;;
+  4)
+    disableHost
+    index
+    ;;
+  5)
+    checkConf
+    index
+    ;;
+  6)
+    restartNginx
+    index
+    ;;
+  q | Q)
+    exit 0
+    ;;
+  *)
+    anykeyNothing
+    index
+    ;;
   esac
 }
 
@@ -197,7 +209,7 @@ function addHost() {
   fi
   # detect ssl certificate
   if [ -f "${NGXCrtDir}/${server_name}.crt" ] && [ -f "${NGXCrtDir}/${server_name}.key" ]; then
-    echo "[I] SSL certificate was detected. SSL will be configured." 
+    echo "[I] SSL certificate was detected. SSL will be configured."
     sslblock="#SSL Configuration
     listen 443 ssl;
     ssl_certificate ${NGXCrtDir}/${server_name}.crt;
@@ -209,7 +221,7 @@ function addHost() {
   else
     sslblock=""
   fi
-  
+
   serverblock="
 server {
     listen 80 ;
@@ -236,18 +248,15 @@ server {
   read -p "[Q] Create and Save '${server_name}.conf'? (Y/n) if you choose 'N' the config will be displayed." savefile
 
   case "$savefile" in
-  n | N) echo -e "${serverblock}" ; anykey ;;
+  n | N)
+    echo -e "${serverblock}"
+    anykey
+    ;;
   *)
     echo -e "$serverblock" >"${NGXCfgDir}/${server_name}.conf"
     if [ -f "${NGXCfgDir}/${server_name}.conf" ]; then
       echo -e "[S] Replace complete.\n[success] ${NGXCfgDir}/${server_name}.conf has been successfully created!"
-      echo -e "[Q] Checking configuration files ..."
-      if checkConf; then
-        echo "[C] Configuration seems to be ok."
-      else
-        echo "[S] Configuration seems to be ok. Nginx will be restarted."
-        restartNginx
-      fi
+      checkAndRestart
     fi
     ;;
   esac
@@ -265,29 +274,85 @@ function delHost() {
         anykey "[I] ${NGXCfgDir}/${delete_host}.conf was deleted."
       else
         anykey "[E] Cannot remove ${NGXCfgDir}/${delete_host}.conf."
-      return 1
+        return 1
       fi
     else
-      return 1;
+      return 1
+    fi
+  fi
+  index
+}
+
+function enableHost() {
+  echo "[I] Current disabled hosts:"
+  find "${NGXDisDir}" -name "*.conf" | sed 's#.*/##' | sed "s#.conf##g"
+  read -p "[Q] Choose the virtual host that you want to enable (Enter to skip)?:" enable_host
+  if [ "$enable_host" = "" ]; then
+    anykeyNothing
+  else
+    if [ -f "${NGXDisDir}/${enable_host}.conf" ]; then
+      if mv "${NGXDisDir}/${enable_host}.conf" "${NGXCfgDir}/${enable_host}.conf"; then
+        checkAndRestart
+        anykey "[I] ${enable_host}.conf was enabled."
+        return 0
+      else
+        anykey "[E] Cannot enable ${enable_host}.conf."
+        return 1
+      fi
+    else
+      return 1
+    fi
+  fi
+  index
+}
+
+function disableHost() {
+  echo "[I] Current enabled hosts:"
+  find "${NGXCfgDir}" -name "*.conf" | sed 's#.*/##' | sed "s#.conf##g"
+  read -p "[Q] Choose the virtual host that you want disable (Enter to skip)?:" disable_host
+  if [ "$disable_host" = "" ]; then
+    anykeyNothing
+  else
+    if [ -f "${NGXCfgDir}/${disable_host}.conf" ]; then
+      if mv "${NGXCfgDir}/${disable_host}.conf" "${NGXDisDir}/${disable_host}.conf"; then
+        checkAndRestart
+        anykey "[I] ${disable_host}.conf was disabled."
+        return 0
+      else
+        anykey "[E] Cannot enable ${disable_host}.conf."
+        return 1
+      fi
+    else
+      return 1
     fi
   fi
   index
 }
 
 function checkConf() {
+  echo -e "[I] Checking configuration files ..."
   docker-compose -f ${CMPFileDir} exec nginx nginx -t
   err=$?
   anykey
   return ${err}
 }
 
-function restartNginx {
+function restartNginx() {
+  echo -e "[I] Restarting nginx ..."
   docker-compose -f ${CMPFileDir} restart nginx
   err=$?
   anykey
   return ${err}
 }
 
+function checkAndRestart() {
+  if checkConf; then
+    echo "[I] Configuration seems to be ok. Nginx will be restarted."
+    restartNginx
+  else
+    echo "[E] Configuration seems to be not ok."
+  fi
+}
 function anykey() {
   read -p "${1-[I]} Press any key to confinue..."
 }
