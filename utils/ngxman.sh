@@ -58,7 +58,6 @@ function landingNotice() {
   rows=$(tput lines)
   cols=$(tput cols)
   fallbackNotice="Welcome to HostMan on $DESPCN\n"
-  notice_length=${#fallbackNotice}
   middle_row=$((rows / 2))
   middle_col=$((cols / 2))
   tput clear
