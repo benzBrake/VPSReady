@@ -2,7 +2,7 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-23 14:54:24
+ # @LastEditTime: 2021-02-23 14:55:36
  # @LastEditors: Ryan
  # @Description: VPS初始化脚本
  # @FilePath: \VPSReady\init.sh
@@ -37,18 +37,18 @@ if [ -e "/etc/ssh/sshd_config" ]; then
     done
     # 有本地用本地（Git clone 项目的时候本地有key），没有就从 Mirror 下载
     if [ -f ./pub/xiaoji.pub ]; then
-        cp ./pub/xiaoji.pub ${PUBKeyFile}
+        cp ./pub/xiaoji.pub "${PUBKeyFile}"
     else
         curl -sSL "${MIRROR}/pub/xiaoji.pub" -o "${PUBKeyFile}"
     fi
     if [ ! -f ~/.ssh/authorized_keys ]; then
-        cat ${PUBKeyFile} >> ~/.ssh/authorized_keys
+        cat "${PUBKeyFile}" >> ~/.ssh/authorized_keys
     else
         AuthKeyStr=$(cat ~/.ssh/authorized_keys)
-        PUBKeyStr=$(< ${PUBKeyFile} sed 's@^\s*@@;s@\s*$@@')
+        PUBKeyStr=$(< "${PUBKeyFile}" sed 's@^\s*@@;s@\s*$@@')
         CompareResult=$(echo "${AuthKeyStr}" | grep "${PUBKeyStr}")
         [ "$CompareResult" = "" ] && {
-            cat ${PUBKeyFile} >> ~/.ssh/authorized_keys
+            cat "${PUBKeyFile}" >> ~/.ssh/authorized_keys
         }
         chmod 600 ~/.ssh/authorized_keys
     fi
@@ -81,8 +81,8 @@ if [ -e "/etc/ssh/sshd_config" ]; then
         service sshd restart
         service ssh restart
     fi
-    #清理垃圾
-    rm -rf ${PUBKeyFile}
+    #清理垃圾"
+    rm -rf "${PUBKeyFile}"
 else
     echo "Do not support none OpenSSH Server!"
 fi
