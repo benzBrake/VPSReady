@@ -22,7 +22,7 @@ services:
         container_name: "php"
         restart: always
         build:
-           context: /data/web/Dockerfiles
+           context: /data/Dockerfiles
            dockerfile: php
         ports:
             - "127.0.0.1:9000:9000"
