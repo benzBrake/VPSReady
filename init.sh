@@ -2,7 +2,7 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-24 09:19:57
+ # @LastEditTime: 2021-02-24 09:20:42
  # @LastEditors: Ryan
  # @Description: VPS初始化脚本 For Debian/Ubuntu
  # @FilePath: \VPSReady\init.sh
@@ -48,7 +48,7 @@ if [ -e "/etc/ssh/sshd_config" ]; then
     info "Installing public key"
     mkdir -p /tmp ~/.ssh > /dev/null
     PUBKeyFile="/tmp/$(randomNum).pub"
-    while :; do echo
+    while :; do echo > /dev/null
         [ ! -f "${PUBKeyFile}" ] && break
         PUBKeyFile="/tmp/$(randomNum).pub"
     done
