@@ -1,0 +1,48 @@
+version: "3"
+services:
+    nginx:
+        image: nginx:latest
+        container_name: "nginx"
+        restart: always
+        ports:
+            - "80:80"
+            - "443:443"
+        environment:
+           - TZ=Asia/Shanghai
+        depends_on:
+           - "php"
+        volumes:
+           - "/data/web/webconf:/etc/nginx/conf.d"
+           - "/data/web:/data/web"
+        networks:
+           - net-app
+
+    php:
+        image: php:7.4-fpm-custom
+        container_name: "php"
+        restart: always
+        build:
+           context: /data/web/Dockerfiles
+           dockerfile: php
+        ports:
+            - "127.0.0.1:9000:9000"
+        environment:
+            - TZ=Asia/Shanghai
+        volumes:
+            - "/data/web:/data/web"
+        networks:
+            - net-app
+    mysql:
+        image: mysql
+        container_name: mysql
+        command: --default-authentication-plugin=mysql_native_password
+        restart: always
+        user: 1001:1001
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+        volumes:
+            - /data/mysql:/var/lib/mysql
+        ports:
+            - "127.0.0.1:3306:3306"
+        networks:
+            - net-app
