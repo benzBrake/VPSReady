@@ -2,7 +2,7 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-24 09:04:57
+ # @LastEditTime: 2021-02-24 09:06:51
  # @LastEditors: Ryan
  # @Description: VPS初始化脚本 For Debian/Ubuntu
  # @FilePath: \VPSReady\init.sh
@@ -46,7 +46,7 @@ if [ -e "/etc/ssh/sshd_config" ]; then
     cp -f /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
     # 添加公钥 xiaoji
     info "Installing public key"
-    mkdir -p /tmp ~/.ssh
+    mkdir -p /tmp ~/.ssh > /dev/null
     PUBKeyFile="/tmp/$(randomNum).pub"
     while :; do echo
         [ ! -f "${PUBKeyFile}" ] && break
@@ -55,7 +55,7 @@ if [ -e "/etc/ssh/sshd_config" ]; then
     # 有本地用本地（Git clone 项目的时候本地有key），没有就从 Mirror 下载
     if [ -f /data/pub/xiaoji.pub ]; then
         info "Local public key not found, downloading..."
-        cp /data/pub/xiaoji.pub "${PUBKeyFile}"
+        cp /data/pub/xiaoji.pub "${PUBKeyFile}" >  /dev/null
     else
         curl -sSL "${MIRROR}/pub/xiaoji.pub" -o "${PUBKeyFile}"
     fi
@@ -68,7 +68,7 @@ if [ -e "/etc/ssh/sshd_config" ]; then
         [ "$CompareResult" = "" ] && {
             cat "${PUBKeyFile}" >> ~/.ssh/authorized_keys
         }
-        chmod 600 ~/.ssh/authorized_keys
+        chmod 600 ~/.ssh/authorized_keys > /dev/null
     fi
     # 仅公钥登录
     info "Enabling only login with public key"
@@ -98,12 +98,12 @@ if [ -e "/etc/ssh/sshd_config" ]; then
     if [ -n "$(command -v systemctl)" ]; then
         if systemctl restart sshd; then
             info "Removing SSH Config Backup..."
-            rm -f /etc/ssh/sshd_config.bak
+            rm -f /etc/ssh/sshd_config.bak > /dev/null
         else
             err "Modify SSH config Failed."
             info "Restoring SSH Config..."
-            rm -f /etc/ssh/sshd_config
-            mv -f /etc/ssh/sshd_config.bak /etc/ssh/sshd_config
+            rm -f /etc/ssh/sshd_config > /dev/null
+            mv -f /etc/ssh/sshd_config.bak /etc/ssh/sshd_config > /dev/null
         fi
     else
         service sshd restart
