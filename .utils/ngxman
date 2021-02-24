@@ -2,7 +2,7 @@
 ###
 # @Author: Ryan
 # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-23 20:02:06
+ # @LastEditTime: 2021-02-24 17:08:05
  # @LastEditors: Ryan
 # @Description: Docker Nginx 管理脚本
  # @FilePath: \VPSReady\.utils\ngxman
@@ -295,7 +295,7 @@ function addHost() {
   if [ -f "${NGXCrtDir}/${server_name}.crt" ] && [ -f "${NGXCrtDir}/${server_name}.key" ]; then
     echo "[I] SSL certificate was detected. SSL will be configured."
     sslblock="#SSL Configuration
-    listen 443 ssl;
+    listen ${NGXMAN_SSL_PORT-443} ssl;
     ssl_certificate ${NGXCrtDir}/${server_name}.crt;
     ssl_certificate_key ${NGXCrtDir}/${server_name}.key;
     ssl_session_timeout 5m;
