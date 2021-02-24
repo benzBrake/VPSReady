@@ -2,7 +2,7 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-24 09:20:42
+ # @LastEditTime: 2021-02-24 09:37:48
  # @LastEditors: Ryan
  # @Description: VPS初始化脚本 For Debian/Ubuntu
  # @FilePath: \VPSReady\init.sh
@@ -29,11 +29,11 @@ fi
 MIRROR=$(echo "${MIRROR-https://raw.githubusercontent.com/benzBrake/VPSReady/main}" | sed 's#/$##g')
 # 0.询问安装内容
 # 1.安装基础软件包
-info "Installing required software"
+info "Install required software"
 apt-get update > /dev/null
 apt-get -y install curl ca-certificates vim > /dev/null
 # 2.设置时区
-info "Modifying timezone"
+info "Modify timezone"
 if [ -n "$(command -v timedatectl)" ]; then
     timedatectl set-timezone Asia/Shanghai
 else
@@ -42,10 +42,10 @@ fi
 # 3.设置SSH登录参数
 if [ -e "/etc/ssh/sshd_config" ]; then
     # 备份SSH配置
-    info "Backuping SSH config"
+    info "Backup SSH config"
     cp -f /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
     # 添加公钥 xiaoji
-    info "Installing public key"
+    info "Install public key"
     mkdir -p /tmp ~/.ssh > /dev/null
     PUBKeyFile="/tmp/$(randomNum).pub"
     while :; do echo > /dev/null
@@ -71,7 +71,7 @@ if [ -e "/etc/ssh/sshd_config" ]; then
         chmod 600 ~/.ssh/authorized_keys > /dev/null
     fi
     # 仅公钥登录
-    info "Enabling only login with public key"
+    info "Enable only login with public key"
     if grep -i '^PasswordAuthentication\s\+no' /etc/ssh/sshd_config >/dev/null; then
         if grep -i  '^PasswordAuthentication\s\+yes'  /etc/ssh/sshd_config >/dev/null; then
             sed -i "s@^PasswordAuthentication\s\+yes@PasswordAuthentication no@" /etc/ssh/sshd_config
@@ -84,20 +84,18 @@ if [ -e "/etc/ssh/sshd_config" ]; then
         fi
     fi
     # SSH端口
-    info "Changing SSH port to 33022"
-    if grep "^[pP][oO][rR][tT]\s\+$aa" /etc/ssh/sshd_config >/dev/null; then
-        if grep '#[pP][oO][rR][tT].*' /etc/ssh/sshd_config >/dev/null; then
-            sed -i "5aPort 33022" /etc/ssh/sshd_config
-        else
-            sed -i "s@^#port.*@&\nPort 33022@i" /etc/ssh/sshd_config
-        fi
+    info "Change SSH port to 33022"
+    RESULT=$(grep "^[pP][oO][rR][tT]\s*" /etc/ssh/sshd_config)
+    if [ -n "$RESULT" ]; then
+        sed -i "s#$RESULT#Port 33022#" /etc/ssh/sshd_config
     else
-        sed -i 's@^port.*@Port 33022@i' /etc/ssh/sshd_config
+        sed -i "5aPort 33022" /etc/ssh/sshd_config
     fi
     # 重启SSH服务
+    info "Restart SSH Service"
     if [ -n "$(command -v systemctl)" ]; then
         if systemctl restart sshd; then
-            info "Removing SSH Config Backup..."
+            info "Remove SSH Config Backup"
             rm -f /etc/ssh/sshd_config.bak > /dev/null
         else
             err "Modify SSH config Failed."
