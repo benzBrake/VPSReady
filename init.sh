@@ -2,7 +2,7 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-24 09:10:09
+ # @LastEditTime: 2021-02-24 09:11:09
  # @LastEditors: Ryan
  # @Description: VPS初始化脚本 For Debian/Ubuntu
  # @FilePath: \VPSReady\init.sh
@@ -118,7 +118,7 @@ fi
 /usr/sbin/useradd -u 1001 mysql
 /usr/sbin/useradd -u 1002 www
 # 5.安装 Docker
-if [ -n "$(command -v docker)" ]; then
+if [ -z "$(command -v docker)" ]; then
     if [ -f /data/.init/docker.sh ]; then
         chmod +x /data/.init/docker.sh
         /data/.init/docker.sh
