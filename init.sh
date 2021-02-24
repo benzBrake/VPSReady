@@ -2,7 +2,7 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-24 09:18:39
+ # @LastEditTime: 2021-02-24 09:19:57
  # @LastEditors: Ryan
  # @Description: VPS初始化脚本 For Debian/Ubuntu
  # @FilePath: \VPSReady\init.sh
@@ -138,7 +138,7 @@ if [ ! -f /data/docker-compose.yml ] && [ -f /data/.docker-compose.yml.demo ]; t
     fi
 fi
 # 6.写入环境变量
-if grep ".utils/.env" /root/.bashrc; then
+if grep ".utils/.env" /root/.bashrc > /dev/null; then
     info "Utils env is set."
 else
     info "Setting utils env."
