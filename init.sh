@@ -2,7 +2,7 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-24 09:01:26
+ # @LastEditTime: 2021-02-24 09:03:39
  # @LastEditors: Ryan
  # @Description: VPS初始化脚本 For Debian/Ubuntu
  # @FilePath: \VPSReady\init.sh
@@ -53,9 +53,9 @@ if [ -e "/etc/ssh/sshd_config" ]; then
         PUBKeyFile="/tmp/$(randomNum).pub"
     done
     # 有本地用本地（Git clone 项目的时候本地有key），没有就从 Mirror 下载
-    if [ -f ./pub/xiaoji.pub ]; then
+    if [ -f /data/pub/xiaoji.pub ]; then
         info "Local public key not found, downloading..."
-        cp ./pub/xiaoji.pub "${PUBKeyFile}"
+        cp /data/pub/xiaoji.pub "${PUBKeyFile}"
     else
         curl -sSL "${MIRROR}/pub/xiaoji.pub" -o "${PUBKeyFile}"
     fi
