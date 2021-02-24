@@ -2,7 +2,7 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-24 09:11:09
+ # @LastEditTime: 2021-02-24 09:12:18
  # @LastEditors: Ryan
  # @Description: VPS初始化脚本 For Debian/Ubuntu
  # @FilePath: \VPSReady\init.sh
@@ -119,12 +119,15 @@ fi
 /usr/sbin/useradd -u 1002 www
 # 5.安装 Docker
 if [ -z "$(command -v docker)" ]; then
+    info "Installing Docker"
     if [ -f /data/.init/docker.sh ]; then
         chmod +x /data/.init/docker.sh
         /data/.init/docker.sh
     else
         bash -c "$(curl -sSL "${MIRROR}/.init/docker.sh" -o -)"
     fi
+else
+    info "Skip install Docker"
 fi
 # 创建默认 Docker Compose 配置
 if [ ! -f /data/docker-compose.yml ] && [ -f /data/.docker-compose.yml.demo ]; then
