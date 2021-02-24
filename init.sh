@@ -2,7 +2,7 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-24 09:17:58
+ # @LastEditTime: 2021-02-24 09:18:39
  # @LastEditors: Ryan
  # @Description: VPS初始化脚本 For Debian/Ubuntu
  # @FilePath: \VPSReady\init.sh
@@ -30,8 +30,8 @@ MIRROR=$(echo "${MIRROR-https://raw.githubusercontent.com/benzBrake/VPSReady/mai
 # 0.询问安装内容
 # 1.安装基础软件包
 info "Installing required software"
-apt-get update
-apt-get -y install curl ca-certificates vim
+apt-get update > /dev/null
+apt-get -y install curl ca-certificates vim > /dev/null
 # 2.设置时区
 info "Modifying timezone"
 if [ -n "$(command -v timedatectl)" ]; then
