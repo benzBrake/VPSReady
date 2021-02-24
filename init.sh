@@ -2,7 +2,7 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-24 09:15:46
+ # @LastEditTime: 2021-02-24 09:17:58
  # @LastEditors: Ryan
  # @Description: VPS初始化脚本 For Debian/Ubuntu
  # @FilePath: \VPSReady\init.sh
@@ -115,8 +115,8 @@ else
     warn "Do not support none OpenSSH Server!"
 fi
 # 4.新增用户
-/usr/sbin/useradd -u 1001 mysql
-/usr/sbin/useradd -u 1002 www
+/usr/sbin/useradd -u 1001 mysql 2> /dev/null
+/usr/sbin/useradd -u 1002 www 2> /dev/null
 # 5.安装 Docker
 if [ -z "$(command -v docker)" ]; then
     info "Installing Docker"
