@@ -2,7 +2,7 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-25 19:48:50
+ # @LastEditTime: 2021-02-25 19:50:30
  # @LastEditors: Ryan
  # @Description: VPS初始化脚本 For Debian/Ubuntu
  # @FilePath: \VPSReady\init.sh
@@ -136,17 +136,17 @@ if [ ! -f /data/docker-compose.yml ] && [ -f /data/.docker-compose.yml.demo ]; t
     fi
 fi
 # 6.Utils 配置
-if grep ".utils/.env" /root/.bashrc > /dev/null; then
+if grep "/data/.env" /root/.bashrc > /dev/null; then
     info "Utils env is set."
 else
     info "Setting utils env."
-    echo '. "/data/.utils/.env"' >> /root/.bashrc
+    echo '. "/data/.env"' >> /root/.bashrc
 fi
 chmod +x /data/.utils/* > /dev/null
 chmod -x /data/.utils/.env > /dev/null
 # 7.配置 vim
 if [ ! -f /root/.vimrc ]; then
     info "Configure vim"
-    ln -s /data/.init/.vimrc /root/.vimrc
+    ln -sf /data/.init/.vimrc /root/.vimrc
 fi
 suc "ALL Done"
