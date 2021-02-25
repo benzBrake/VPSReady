@@ -2,7 +2,7 @@
 ###
 # @Author: Ryan
 # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-25 19:02:02
+ # @LastEditTime: 2021-02-25 19:02:31
  # @LastEditors: Ryan
 # @Description: Docker Nginx 管理脚本
  # @FilePath: \VPSReady\.utils\ngxman
@@ -229,7 +229,6 @@ function addHost() {
       proxy_set_header X-Real-IP \$remote_addr;
       proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
       proxy_set_header X-Forwarded-Proto \$scheme;
-
     }"
     ;;
   1)
