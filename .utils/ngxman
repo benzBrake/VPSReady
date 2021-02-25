@@ -2,7 +2,7 @@
 ###
 # @Author: Ryan
 # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-24 17:08:05
+ # @LastEditTime: 2021-02-25 19:00:16
  # @LastEditors: Ryan
 # @Description: Docker Nginx 管理脚本
  # @FilePath: \VPSReady\.utils\ngxman
@@ -248,7 +248,7 @@ function addHost() {
     n | N)
       indexblock="index index.html index.htm index.nginx-debian.html;"
       echo -p "[I] N is selected, Ignoring PHP"
-    ;;
+      ;;
     *)
       indexblock="index index.php index.html index.htm index.nginx-debian.html;"
       case "${pathinfo_support}" in
@@ -263,7 +263,7 @@ function addHost() {
       esac
       ;;
     esac
-    
+
     # set default document root
     [ -z "${server_root}" ] && server_root="${NGXWebDir}/${server_name}"
     rootblock="root ${server_root};
@@ -311,8 +311,8 @@ function addHost() {
 
   serverblock="
 server {
-    listen 80 ;
-    listen [::]:80 ;
+    listen 80;
+    listen [::]:80;
     server_name ${server_name};
     
     ${sslblock}
@@ -322,6 +322,7 @@ server {
     ${phpblock}
     ${rewriteblock}
 }"
+  serverblock=$(echo -e "$serverblock" | perl -pe 'BEGIN{undef $/;} s/\n[\s\t]*\n/\n/smg')
 
   echo -e "[S] Server block succesfully generated!
 [I] You can save the generated configuration into a new (.conf) file
