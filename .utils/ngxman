@@ -2,7 +2,7 @@
 ###
 # @Author: Ryan
 # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-25 19:00:16
+ # @LastEditTime: 2021-02-25 19:02:02
  # @LastEditors: Ryan
 # @Description: Docker Nginx 管理脚本
  # @FilePath: \VPSReady\.utils\ngxman
@@ -224,14 +224,12 @@ function addHost() {
     read -p "[Q] What website do you want to proxy to (eg.https://baidu.com): " proxy_url
     proxyblock="# proxy to another site
     location / {
-      proxy_pass ${proxy_url}\$request_uri;
+      proxy_pass ${proxy_url};
       proxy_set_header Host \$http_host;
-      proxy_buffers 256 4k;
-      proxy_max_temp_file_size 0;
-      proxy_connect_timeout 30;
-      proxy_cache_valid 200 302 10m;
-      proxy_cache_valid 301 1h;
-      proxy_cache_valid any 1m;
+      proxy_set_header X-Real-IP \$remote_addr;
+      proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto \$scheme;
+
     }"
     ;;
   1)
