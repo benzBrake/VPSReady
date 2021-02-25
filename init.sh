@@ -2,7 +2,7 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-25 19:37:21
+ # @LastEditTime: 2021-02-25 19:48:50
  # @LastEditors: Ryan
  # @Description: VPS初始化脚本 For Debian/Ubuntu
  # @FilePath: \VPSReady\init.sh
@@ -147,6 +147,6 @@ chmod -x /data/.utils/.env > /dev/null
 # 7.配置 vim
 if [ ! -f /root/.vimrc ]; then
     info "Configure vim"
-    cp /data/.init/.vimrc /root/.vimrc
+    ln -s /data/.init/.vimrc /root/.vimrc
 fi
 suc "ALL Done"
