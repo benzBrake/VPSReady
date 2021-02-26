@@ -4,19 +4,19 @@ services:
         image: nginx:latest
         container_name: "nginx"
         restart: always
-        ports:
-            - "80:80"
-            - "443:443"
         environment:
            - TZ=Asia/Shanghai
         depends_on:
            - "php"
+        ports:
+            - "80:80"
+            - "443:443"
         volumes:
-           - "/data/web/webconf:/etc/nginx/conf.d"
-           - "/data/web:/data/web"
+           - /data/web/webconf:/etc/nginx/conf.d:ro
+           - /data/web:/data/web
+           - /data/web/nginx-frontend.conf:/etc/nginx/nginx.conf:ro
         networks:
            - net-app
-
     php:
         image: php:7.4-fpm-custom
         container_name: "php"
@@ -29,7 +29,7 @@ services:
         environment:
             - TZ=Asia/Shanghai
         volumes:
-            - "/data/web:/data/web"
+            - /data/web/webapps:/data/web/webapps
         networks:
             - net-app
     mysql:
@@ -46,5 +46,25 @@ services:
             - "127.0.0.1:3306:3306"
         networks:
             - net-app
+    trojan:
+        image: trojan
+        container_name: trojan
+        restart: always
+        privileged: true
+        volumes:
+            - /data/web/webcert:/usr/local/etc/trojan/cert:ro
+        command: init
+        networks:
+            - net-app
+    bitwarden:
+        image: bitwardenrs/server:latest
+        container_name: bitwarden
+        restart: always
+        env_file:
+            - /data/bitwarden/config.env
+        volumes:
+            - /data/bitwarden:/data/bitwarden
+        networks:
+            - net-app
 networks:
-    net-app: 
+    net-app:
