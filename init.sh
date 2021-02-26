@@ -2,7 +2,7 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-25 19:50:30
+ # @LastEditTime: 2021-02-26 08:32:00
  # @LastEditors: Ryan
  # @Description: VPS初始化脚本 For Debian/Ubuntu
  # @FilePath: \VPSReady\init.sh
@@ -143,7 +143,6 @@ else
     echo '. "/data/.env"' >> /root/.bashrc
 fi
 chmod +x /data/.utils/* > /dev/null
-chmod -x /data/.utils/.env > /dev/null
 # 7.配置 vim
 if [ ! -f /root/.vimrc ]; then
     info "Configure vim"
