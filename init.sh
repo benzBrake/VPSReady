@@ -2,7 +2,7 @@
 ###
  # @Author: Ryan
  # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-26 08:32:00
+ # @LastEditTime: 2021-02-26 09:03:24
  # @LastEditors: Ryan
  # @Description: VPS初始化脚本 For Debian/Ubuntu
  # @FilePath: \VPSReady\init.sh
@@ -148,4 +148,8 @@ if [ ! -f /root/.vimrc ]; then
     info "Configure vim"
     ln -sf /data/.init/.vimrc /root/.vimrc
 fi
+# 8.安装 ez-bash
+git clone https://github.com/benzBrake/.ez-bash /data/.ez
+chmod +x /data/.ez/*.bash
+chmod +x /data/.ez/*/*.bash
 suc "ALL Done"
