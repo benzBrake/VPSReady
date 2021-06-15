@@ -31,7 +31,7 @@ MIRROR=$(echo "${MIRROR-https://raw.githubusercontent.com/benzBrake/VPSReady/mai
 # 1.安装基础软件包
 info "Install required software"
 apt-get update > /dev/null
-apt-get -y install curl ca-certificates vim unzip > /dev/null
+apt-get -y install curl ca-certificates vim unzip ftp default-mysql-client > /dev/null
 # 2.设置时区
 info "Modify timezone"
 if [ -n "$(command -v timedatectl)" ]; then
