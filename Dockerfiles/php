@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
         libcurl4-openssl-dev \
         libzip-dev \
         locales \
-        sendmail \
+        sendmail
 # Install PHP Extensions
 RUN docker-php-ext-configure gd \
     && docker-php-ext-install -j$(nproc) gd \
