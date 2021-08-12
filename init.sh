@@ -40,7 +40,7 @@ else
     ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 fi
 if uname -a | grep -q "Microsoft"; then
-    info "WSL Environment. Skip OpenSSH Configure!"
+    info "WSL Environment. Skip OpenSSH / Docker Configure!"
 else
     # 3.设置SSH登录参数
     if [ -e "/etc/ssh/sshd_config" ]; then
@@ -137,6 +137,12 @@ else
         else
             err "Cannot create /data/docker-compose.yml"
         fi
+    fi
+    if [ -f /data/.init/nginx.sh ]; then
+        chmod +x /data/.init/nginx.sh
+        /data/.init/nginx.sh
+    else
+        bash -c "$(curl -sSL "${MIRROR}/.init/nginx.sh" -o -)"
     fi
 fi
 
