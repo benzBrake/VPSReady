@@ -186,6 +186,7 @@ function index() {
     rm -rf ${NGXExtDir}/*.conf
     rm -rf ${NGXRwtDir}/*.conf
     prepareConf
+    index
     ;;
   q | Q)
     exit 0
