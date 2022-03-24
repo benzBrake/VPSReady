@@ -1,25 +1,25 @@
 #!/bin/sh
 ###
- # @Author: Ryan
- # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-26 09:03:24
- # @LastEditors: Ryan
- # @Description: VPS初始化脚本 For Debian/Ubuntu
- # @FilePath: \VPSReady\init.sh
+# @Author: Ryan
+# @Date: 2021-02-22 20:18:53
+ # @LastEditTime: 2022-03-24 11:31:34
+ # @LastEditors: Please set LastEditors
+# @Description: VPS初始化脚本 For Debian/Ubuntu/Alpine
+# @FilePath: \VPSReady\init.sh
 ###
 randomNum() {
     awk -v min=10000 -v max=99999 'BEGIN{srand(); print int(min+rand()*(max-min+1))}'
 }
-info () {
+info() {
     echo "[I] $*"
 }
-warn () {
+warn() {
     echo "[W] $*"
 }
-err () {
+err() {
     echo "[E] $*"
 }
-suc () {
+suc() {
     echo "[S] $*"
 }
 if [ -z "$(command -v apt-get)" ]; then
@@ -27,11 +27,32 @@ if [ -z "$(command -v apt-get)" ]; then
     exit 1
 fi
 MIRROR=$(echo "${MIRROR-https://raw.githubusercontent.com/benzBrake/VPSReady/main}" | sed 's#/$##g')
-# 0.询问安装内容
+# 0.安装内容
+INSTALL_MYSQL=true
+INSTALL_DOCKER=ture
+INSTALL_NGINX=true
+TOTAL_RAM=$(free -m | awk '$1=="This" || NR == 2' | awk '{print $2}')
+if [ "$TOTAL_RAM" -le 512 ]; then
+    INSTALL_MYSQL=false
+    INSTALL_DOCKER=false
+fi
+if [ "$TOTAL_RAM" -le 64 ]; then
+    INSTALL_NGINX=false
+fi
 # 1.安装基础软件包
 info "Install required software"
-apt-get update > /dev/null
-apt-get -y install curl ca-certificates vim unzip ftp default-mysql-client > /dev/null
+if [ -n "$(command -v apt-get)" ]; then
+    apt-get update >/dev/null
+    apt-get -y install curl ca-certificates vim unzip ftp >/dev/null
+    [ "$INSTALL_MYSQL" = true ] && apt-get -y install default-mysql-client >/dev/null
+elif [ -n "$(command -v apk)" ]; then
+    apk add --update --no-cache curl ca-certificates vim ftp tzdata > /dev/null
+    [ "$INSTALL_MYSQL" = true ] && apk add --update --nocache mysql-client > /dev/null
+else
+    err "Do not support your system!"
+    exit 1
+fi
+
 # 2.设置时区
 info "Modify timezone"
 if [ -n "$(command -v timedatectl)" ]; then
@@ -49,40 +70,41 @@ else
         cp -f /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
         # 添加公钥 xiaoji
         info "Install public key"
-        mkdir -p /tmp ~/.ssh > /dev/null
+        mkdir -p /tmp ~/.ssh >/dev/null
         PUBKeyFile="/tmp/$(randomNum).pub"
-        while :; do echo > /dev/null
+        while :; do
+            echo >/dev/null
             [ ! -f "${PUBKeyFile}" ] && break
             PUBKeyFile="/tmp/$(randomNum).pub"
         done
         # 有本地用本地（Git clone 项目的时候本地有key），没有就从 Mirror 下载
         if [ -f /data/pub/xiaoji.pub ]; then
             info "Local public key not found, downloading..."
-            cp /data/pub/xiaoji.pub "${PUBKeyFile}" >  /dev/null
+            cp /data/pub/xiaoji.pub "${PUBKeyFile}" >/dev/null
         else
             curl -sSL "${MIRROR}/pub/xiaoji.pub" -o "${PUBKeyFile}"
         fi
         if [ ! -f ~/.ssh/authorized_keys ]; then
-            cat "${PUBKeyFile}" >> ~/.ssh/authorized_keys
+            cat "${PUBKeyFile}" >>~/.ssh/authorized_keys
         else
             AuthKeyStr=$(cat ~/.ssh/authorized_keys)
-            PUBKeyStr=$(< "${PUBKeyFile}" sed 's@^\s*@@;s@\s*$@@')
+            PUBKeyStr=$(sed <"${PUBKeyFile}" 's@^\s*@@;s@\s*$@@')
             CompareResult=$(echo "${AuthKeyStr}" | grep "${PUBKeyStr}")
             [ "$CompareResult" = "" ] && {
-                cat "${PUBKeyFile}" >> ~/.ssh/authorized_keys
+                cat "${PUBKeyFile}" >>~/.ssh/authorized_keys
             }
-            chmod 600 ~/.ssh/authorized_keys > /dev/null
+            chmod 600 ~/.ssh/authorized_keys >/dev/null
         fi
         # 仅公钥登录
         info "Enable only login with public key"
         if grep -i '^PasswordAuthentication\s\+no' /etc/ssh/sshd_config >/dev/null; then
-            if grep -i  '^PasswordAuthentication\s\+yes'  /etc/ssh/sshd_config >/dev/null; then
+            if grep -i '^PasswordAuthentication\s\+yes' /etc/ssh/sshd_config >/dev/null; then
                 sed -i "s@^PasswordAuthentication\s\+yes@PasswordAuthentication no@" /etc/ssh/sshd_config
             else
-                if grep -i  '^#PasswordAuthentication.*'  /etc/ssh/sshd_config >/dev/null; then
+                if grep -i '^#PasswordAuthentication.*' /etc/ssh/sshd_config >/dev/null; then
                     sed -i "s@^#PasswordAuthentication.*@&\nPasswordAuthentication no@" /etc/ssh/sshd_config
                 else
-                    echo 'PasswordAuthentication no'>> /etc/ssh/sshd_config
+                    echo 'PasswordAuthentication no' >>/etc/ssh/sshd_config
                 fi
             fi
         fi
@@ -99,12 +121,12 @@ else
         if [ -n "$(command -v systemctl)" ]; then
             if systemctl restart sshd; then
                 info "Remove SSH Config Backup"
-                rm -f /etc/ssh/sshd_config.bak > /dev/null
+                rm -f /etc/ssh/sshd_config.bak >/dev/null
             else
                 err "Modify SSH config Failed."
                 info "Restoring SSH Config..."
-                rm -f /etc/ssh/sshd_config > /dev/null
-                mv -f /etc/ssh/sshd_config.bak /etc/ssh/sshd_config > /dev/null
+                rm -f /etc/ssh/sshd_config >/dev/null
+                mv -f /etc/ssh/sshd_config.bak /etc/ssh/sshd_config >/dev/null
             fi
         else
             service sshd restart
@@ -116,10 +138,10 @@ else
         warn "Do not support none OpenSSH Server!"
     fi
     # 4.新增用户
-    /usr/sbin/useradd -u 1001 mysql 2> /dev/null
-    /usr/sbin/useradd -u 1002 www 2> /dev/null
+    [ $INSTALL_MYSQL = true ] && /usr/sbin/useradd -u 1001 mysql 2>/dev/null
+    /usr/sbin/useradd -u 1002 www 2>/dev/null
     # 5.安装 Docker
-    if [ -z "$(command -v docker)" ]; then
+    if [ $INSTALL_DOCKER = true ] && [ -z "$(command -v docker)" ]; then
         info "Installing Docker"
         if [ -f /data/.init/docker.sh ]; then
             chmod +x /data/.init/docker.sh
@@ -131,29 +153,32 @@ else
         info "Skip install Docker"
     fi
     # 创建默认 Docker Compose 配置
-    if [ ! -f /data/docker-compose.yml ] && [ -f /data/.docker-compose.yml.demo ]; then
-        if cp -f /data/.docker-compose.yml.demo /data/docker-compose.yml > /dev/null; then
+    if [ $INSTALL_DOCKER = true ] && [ ! -f /data/docker-compose.yml ] && [ -f /data/.docker-compose.yml.demo ]; then
+        if cp -f /data/.docker-compose.yml.demo /data/docker-compose.yml >/dev/null; then
             info "Create /data/docker-compose.yml"
         else
             err "Cannot create /data/docker-compose.yml"
         fi
     fi
-    if [ -f /data/.init/nginx.sh ]; then
-        chmod +x /data/.init/nginx.sh
-        /data/.init/nginx.sh
-    else
-        bash -c "$(curl -sSL "${MIRROR}/.init/nginx.sh" -o -)"
-    fi
+    # Nginx
+    [ $INSTALL_NGINX = true ] && {
+        if [ -f /data/.init/nginx.sh ]; then
+            chmod +x /data/.init/nginx.sh
+            /data/.init/nginx.sh
+        else
+            bash -c "$(curl -sSL "${MIRROR}/.init/nginx.sh" -o -)"
+        fi
+    }
 fi
 
 # 6.Utils 配置
-if grep "/data/.env" /root/.bashrc > /dev/null; then
+if grep "/data/.env" /root/.bashrc >/dev/null; then
     info "Utils env is set."
 else
     info "Setting utils env."
-    echo '. "/data/.env"' >> /root/.bashrc
+    echo '. "/data/.env"' >>/root/.bashrc
 fi
-chmod +x /data/.utils/* > /dev/null
+chmod +x /data/.utils/* >/dev/null
 # 7.配置 vim
 if [ ! -f /root/.vimrc ]; then
     info "Configure vim"
