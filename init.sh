@@ -1,8 +1,8 @@
-#!/bin/sh
+#!/usr/bin/env sh
 ###
 # @Author: Ryan
 # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2022-03-24 11:31:34
+ # @LastEditTime: 2022-03-24 11:44:52
  # @LastEditors: Please set LastEditors
 # @Description: VPS初始化脚本 For Debian/Ubuntu/Alpine
 # @FilePath: \VPSReady\init.sh
@@ -22,11 +22,23 @@ err() {
 suc() {
     echo "[S] $*"
 }
-if [ -z "$(command -v apt-get)" ]; then
-    err "Only support Debian/Ubuntu"
+
+MIRROR=$(echo "${MIRROR-https://raw.githubusercontent.com/benzBrake/VPSReady/main}" | sed 's#/$##g')
+
+# 系统检测
+_SUPPORT=fasle
+if [ ! -z "$(command -v apt-get)" ]; then
+    _SUPPORT=true
+fi
+if [ ! -z "$(command -v apk)" ]; then
+    _SUPPORT=true
+fi
+
+if [ "$_SUPPORT" = false ]; then
+    err "Only support Debian/Ubuntu/Alpine"
     exit 1
 fi
-MIRROR=$(echo "${MIRROR-https://raw.githubusercontent.com/benzBrake/VPSReady/main}" | sed 's#/$##g')
+
 # 0.安装内容
 INSTALL_MYSQL=true
 INSTALL_DOCKER=ture
@@ -39,6 +51,7 @@ fi
 if [ "$TOTAL_RAM" -le 64 ]; then
     INSTALL_NGINX=false
 fi
+
 # 1.安装基础软件包
 info "Install required software"
 if [ -n "$(command -v apt-get)" ]; then
@@ -179,11 +192,13 @@ else
     echo '. "/data/.env"' >>/root/.bashrc
 fi
 chmod +x /data/.utils/* >/dev/null
+
 # 7.配置 vim
 if [ ! -f /root/.vimrc ]; then
     info "Configure vim"
     ln -sf /data/.init/.vimrc /root/.vimrc
 fi
+
 # 8.安装 ez-bash
 git clone https://github.com/benzBrake/.ez-bash /data/.ez
 chmod +x /data/.ez/*.bash
