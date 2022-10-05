@@ -41,7 +41,7 @@ fi
 
 # 0.安装内容
 INSTALL_MYSQL=true
-INSTALL_DOCKER=ture
+INSTALL_DOCKER=true
 INSTALL_NGINX=true
 TOTAL_RAM=$(free -m | awk '$1=="This" || NR == 2' | awk '{print $2}')
 if [ "$TOTAL_RAM" -le 512 ]; then
