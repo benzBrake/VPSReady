@@ -1,12 +1,5 @@
 #!/usr/bin/env sh
-###
-# @Author: Ryan
-# @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2022-03-24 11:44:52
- # @LastEditors: Please set LastEditors
-# @Description: VPS初始化脚本 For Debian/Ubuntu/Alpine
-# @FilePath: \VPSReady\init.sh
-###
+
 randomNum() {
     awk -v min=10000 -v max=99999 'BEGIN{srand(); print int(min+rand()*(max-min+1))}'
 }
@@ -59,8 +52,8 @@ if [ -n "$(command -v apt-get)" ]; then
     apt-get -y install curl ca-certificates vim unzip ftp >/dev/null
     [ "$INSTALL_MYSQL" = true ] && apt-get -y install default-mysql-client >/dev/null
 elif [ -n "$(command -v apk)" ]; then
-    apk add --update --no-cache curl ca-certificates vim ftp tzdata > /dev/null
-    [ "$INSTALL_MYSQL" = true ] && apk add --update --nocache mysql-client > /dev/null
+    apk add --update --no-cache curl ca-certificates vim ftp tzdata >/dev/null
+    [ "$INSTALL_MYSQL" = true ] && apk add --update --nocache mysql-client >/dev/null
 else
     err "Do not support your system!"
     exit 1
@@ -162,6 +155,8 @@ else
         else
             bash -c "$(curl -sSL "${MIRROR}/.init/docker.sh" -o -)"
         fi
+        systemctl enable docker
+        systemctl start docker
     else
         info "Skip install Docker"
     fi
@@ -203,4 +198,13 @@ fi
 git clone https://github.com/benzBrake/.ez-bash /data/.ez
 chmod +x /data/.ez/*.bash
 chmod +x /data/.ez/*/*.bash
+
+# 9.启用 BBR
+sysctl net.ipv4.tcp_available_congestion_control | grep bbr
+if [ $? -ne 0 ]; then
+    echo "net.core.default_qdisc=fq" >>/etc/sysctl.conf
+    echo "net.ipv4.tcp_congestion_control=bbr" >>/etc/sysctl.con
+    sysctl -p
+fi
+
 suc "ALL Done"
