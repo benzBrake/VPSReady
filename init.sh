@@ -179,25 +179,25 @@ else
     }
 fi
 
-# 6.Utils 配置
-if grep "/data/.env" /root/.bashrc >/dev/null; then
-    info "Utils env is set."
-else
-    info "Setting utils env."
-    echo '. "/data/.env"' >>/root/.bashrc
-fi
-chmod +x /data/.utils/* >/dev/null
-
-# 7.配置 vim
+# 6.配置 vim
 if [ ! -f /root/.vimrc ]; then
     info "Configure vim"
     ln -sf /data/.init/.vimrc /root/.vimrc
 fi
 
-# 8.安装 ez-bash
+# 7.安装 ez-bash
 git clone https://github.com/benzBrake/.ez-bash /data/.ez
 chmod +x /data/.ez/*.bash
 chmod +x /data/.ez/*/*.bash
+
+# 6.Utils 配置
+if grep "/data/.ezenv" /root/.bashrc >/dev/null; then
+    info "Utils env is set."
+else
+    info "Setting utils env."
+    echo '. "/data/.ezenv"' >>/root/.bashrc
+fi
+chmod +x /data/.utils/* >/dev/null
 
 # 9.启用 BBR
 sysctl net.ipv4.tcp_available_congestion_control | grep bbr
