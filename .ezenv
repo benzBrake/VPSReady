@@ -1,4 +1,6 @@
 export PATH=${PATH}:/data/.utils
 export EZ_HOME="/data/.ez"
-export EZ_PLUGINS=""
 . "${EZ_HOME}/ez.bash"
+if [ -f "${EZ_HOME}/.profile" ]; then
+    . "${EZ_HOME}/.profile"
+fi
