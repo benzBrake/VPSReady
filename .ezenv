@@ -1,6 +1,6 @@
 export PATH=${PATH}:/data/.utils
 export EZ_HOME="/data/.ez"
-if [ -f "${EZ_HOME}/.profile" ]; then
-    . "${EZ_HOME}/.profile"
+if [ -f "/data/.profile" ]; then
+    . "/data/.profile"
 fi
 . "${EZ_HOME}/ez.bash"
