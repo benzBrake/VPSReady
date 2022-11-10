@@ -2,10 +2,10 @@
 ###
 # @Author: Ryan
 # @Date: 2021-02-22 20:18:53
- # @LastEditTime: 2021-02-26 08:29:39
- # @LastEditors: Ryan
+# @LastEditTime: 2021-02-26 08:29:39
+# @LastEditors: Ryan
 # @Description: Docker Nginx 管理脚本
- # @FilePath: \VPSReady\.utils\ngxman
+# @FilePath: \VPSReady\.utils\ngxman
 # Mod From https://github.com/tahaHichri/nginxse-virtualhost-generator/blob/master/nginxse.sh
 ###
 # Config Start #############################
@@ -152,11 +152,12 @@ function index() {
   echo "3.Enable Virtual Host"
   echo "4.Disable Virtual Host"
   echo "5.Check Nginx Conf"
-  echo "6.Restart Nginx"
-  echo "7.Re generate extra and rewrite conf"
+  echo "6.Reload Nginx"
+  echo "7.Restart Nginx"
+  echo "8.Re generate extra and rewrite conf"
   echo "Q.Exit"
 
-  read -p "[S] Your Choice: " choice
+  read -rp "[S] Your Choice: " choice
   case "$choice" in
   1)
     addHost
@@ -179,10 +180,14 @@ function index() {
     index
     ;;
   6)
-    restartNginx
+    reloadNginx
     index
     ;;
   7)
+    restartNginx
+    index
+    ;;
+  8)
     rm -rf ${NGXExtDir}/*.conf
     rm -rf ${NGXRwtDir}/*.conf
     prepareConf
@@ -200,9 +205,9 @@ function index() {
 
 function addHost() {
   # ask for server name
-  read -p "[Q] Server name(s) (e.g., example.com or sub.example.com): " server_name
+  read -rp "[Q] Server name(s) (e.g., example.com or sub.example.com): " server_name
   if [ -f "${NGXCfgDir}/${server_name}.conf" ]; then
-    read -p "[Q] Config file exists, replace? (y/N): " replace_flag
+    read -rp "[Q] Config file exists, replace? (y/N): " replace_flag
     case "${replace_flag}" in
     y | Y) echo -e "[I] OK! Config file will be replaced." ;;
     *) echo -e "[I] Nothing to do." && index ;;
@@ -213,16 +218,16 @@ function addHost() {
   echo "1.normal(default)"
   echo "2.redirect"
   echo "3.proxy"
-  read -p "[S] Your choice: " host_type
+  read -rp "[S] Your choice: " host_type
   [ -z "${host_type}" ] && host_type="1"
   case "${host_type}" in
   2)
-    read -p "[Q] What website do you want to redirect to (eg.https://baidu.com): " redirect_url
+    read -rp "[Q] What website do you want to redirect to (eg.https://baidu.com): " redirect_url
     redirectblock="# Redirect to another site
     rewrite ^(.*)\$ ${redirect_url}\$1 permanent;"
     ;;
   3)
-    read -p "[Q] What website do you want to proxy to (eg.https://baidu.com): " proxy_url
+    read -rp "[Q] What website do you want to proxy to (eg.https://baidu.com): " proxy_url
     proxyblock="# proxy to another site
     location / {
       proxy_pass ${proxy_url};
@@ -233,13 +238,13 @@ function addHost() {
     }"
     ;;
   1)
-    read -p "[Q] Html files directory absolute path (default: ${NGXWebDir}/${server_name}): " server_root
+    read -rp "[Q] Html files directory absolute path (default: ${NGXWebDir}/${server_name}): " server_root
     echo -e "[Q] Are you using PHP-FPM:\nPHP-FPM can be installed and set a default\nPHP-FPM is usually set in /etc/php-fpm.d/www.conf."
-    read -p "[Q] Enable PHP Support? (Y/n): " php_support
-    read -p "[Q] Enable Pathinfo Support? (Y/n): " pathinfo_support
+    read -rp "[Q] Enable PHP Support? (Y/n): " php_support
+    read -rp "[Q] Enable Pathinfo Support? (Y/n): " pathinfo_support
     echo "[I] Support Rewrite Rules: "
     find "${NGXRwtDir}" -name "*.conf" | sed 's#.*/##' | sed "s#.conf##g"
-    read -p "[Q] Choose your rewrite rules (Enter to skip or input the rewrite rule name)?: " rewrite_support
+    read -rp "[Q] Choose your rewrite rules (Enter to skip or input the rewrite rule name)?: " rewrite_support
 
     # enable php support
     case "${php_support}" in
@@ -326,7 +331,7 @@ server {
   echo -e "[S] Server block succesfully generated!
 [I] You can save the generated configuration into a new (.conf) file
 [I] Server block configuration file to create: '${NGXCfgDir}/${server_name}.conf'"
-  read -p "[Q] Create and Save '${server_name}.conf'? (Y/n) if you choose 'N' the config will be displayed: " savefile
+  read -rp "[Q] Create and Save '${server_name}.conf'? (Y/n) if you choose 'N' the config will be displayed: " savefile
 
   case "$savefile" in
   n | N)
@@ -346,7 +351,7 @@ server {
 function delHost() {
   echo "[I] Installed hosts: "
   find "${NGXCfgDir}" -name "*.conf" | sed 's#.*/##' | sed "s#.conf##g"
-  read -p "[Q] Choose the virtual host that you want to delete (Enter to skip)?: " delete_host
+  read -rp "[Q] Choose the virtual host that you want to delete (Enter to skip)?: " delete_host
   if [ "$delete_host" = "" ]; then
     anykeyNothing
   else
@@ -368,7 +373,7 @@ function delHost() {
 function enableHost() {
   echo "[I] Current disabled hosts: "
   find "${NGXDisDir}" -name "*.conf" | sed 's#.*/##' | sed "s#.conf##g"
-  read -p "[Q] Choose the virtual host that you want to enable (Enter to skip)?: " enable_host
+  read -rp "[Q] Choose the virtual host that you want to enable (Enter to skip)?: " enable_host
   if [ "$enable_host" = "" ]; then
     anykeyNothing
   else
@@ -391,7 +396,7 @@ function enableHost() {
 function disableHost() {
   echo "[I] Current enabled hosts: "
   find "${NGXCfgDir}" -name "*.conf" | sed 's#.*/##' | sed "s#.conf##g"
-  read -p "[Q] Choose the virtual host that you want disable (Enter to skip)?: " disable_host
+  read -rp "[Q] Choose the virtual host that you want disable (Enter to skip)?: " disable_host
   if [ "$disable_host" = "" ]; then
     anykeyNothing
   else
@@ -419,6 +424,14 @@ function checkConf() {
   return ${err}
 }
 
+function reloadNginx() {
+  echo -e "[I] Reloading nginx ..."
+  docker-compose -f ${CMPFileDir} exec nginx nginx -s reload
+  err=$?
+  anykey
+  return ${err}
+}
+
 function restartNginx() {
   echo -e "[I] Restarting nginx ..."
   docker-compose -f ${CMPFileDir} restart nginx
@@ -437,7 +450,7 @@ function checkAndRestart() {
 }
 
 function anykey() {
-  read -p "${1-[I]} Press any key to confinue..."
+  read -rp "${1-[I]} Press any key to confinue..."
 }
 
 function anykeyNothing() {
