@@ -200,6 +200,7 @@ fi
 chmod +x /data/.utils/* >/dev/null
 
 # 9.安装 Rclone
+mkdir /data/rclone
 curl https://rclone.org/install.sh | bash
 
 # 10.启用 BBR
