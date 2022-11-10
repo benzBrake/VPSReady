@@ -190,7 +190,7 @@ git clone https://github.com/benzBrake/.ez-bash /data/.ez
 chmod +x /data/.ez/*.bash
 chmod +x /data/.ez/*/*.bash
 
-# 6.Utils 配置
+# 8.Utils 配置
 if grep "/data/.ezenv" /root/.bashrc >/dev/null; then
     info "Utils env is set."
 else
@@ -199,7 +199,10 @@ else
 fi
 chmod +x /data/.utils/* >/dev/null
 
-# 9.启用 BBR
+# 9.安装 Rclone
+curl https://rclone.org/install.sh | bash
+
+# 10.启用 BBR
 sysctl net.ipv4.tcp_available_congestion_control | grep bbr
 if [ $? -ne 0 ]; then
     echo "net.core.default_qdisc=fq" >>/etc/sysctl.conf
