@@ -211,4 +211,7 @@ if [ $? -ne 0 ]; then
     sysctl -p
 fi
 
+# 11.安装 acme.sh
+sh /data/.init/acme.sh
+
 suc "ALL Done"
