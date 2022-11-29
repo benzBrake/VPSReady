@@ -7,7 +7,7 @@ VPS初始化脚本
 ## 安装脚本
 
 ```
-apt-get udpate && apt-get -y install git
+apt-get update && apt-get -y install git
 git clone https://github.com/benzBrake/VPSReady /data
 ```
 ## 使用
