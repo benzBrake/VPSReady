@@ -14,4 +14,5 @@ else
     --accountemail  "webmaster@woai.ru"
     rm -rf /tmp/acme.sh
 fi
+. "/data/.acme.sh/acme.sh.env"
 /data/.acme.sh/acme.sh --set-default-ca --server letsencrypt
