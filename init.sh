@@ -19,7 +19,7 @@ suc() {
 MIRROR=$(echo "${MIRROR-https://raw.githubusercontent.com/benzBrake/VPSReady/main}" | sed 's#/$##g')
 
 # 系统检测
-_SUPPORT=fasle
+_SUPPORT=false
 if [ ! -z "$(command -v apt-get)" ]; then
     _SUPPORT=true
 fi
