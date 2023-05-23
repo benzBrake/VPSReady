@@ -6,12 +6,39 @@ VPS初始化脚本
 
 ## 安装脚本
 
-```
+### 安装 Git
+
+#### Debian/Ubuntu
+
+```shell
 apt-get update && apt-get -y install git
+```
+#### Alpine
+
+```shell
+apk update && apk add git
+```
+
+### 克隆脚本
+
+```shell
 git clone https://github.com/benzBrake/VPSReady /data
+chmod +x /data/init.sh
 ```
+
+
+
 ## 使用
+
 ### 初始化 VPS
+```shell
+cd /data
+./init.sh
 ```
-bash init.sh
+
+### 如果不需要修改 SSH 端口
+
+```shell
+NOT_CHANGE_SSH_PORT=1 ./init.sh
 ```
+

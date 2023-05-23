@@ -2,7 +2,7 @@
 ###
 # @Author: Ryan
 # @Date: 2021-02-22 20:18:53
-# @LastEditTime: 2021-02-26 08:29:39
+# @LastEditTime: 2023-05-12 22:39:39
 # @LastEditors: Ryan
 # @Description: Docker Nginx 管理脚本
 # @FilePath: \VPSReady\.utils\ngxman
@@ -295,13 +295,28 @@ function addHost() {
     ;;
   esac
   # detect ssl certificate
-  if [ -f "${NGXCrtDir}/${server_name}.crt" ] && [ -f "${NGXCrtDir}/${server_name}.key" ]; then
+  ssl_detect=false
+  ssl_crt=""
+  ssl_key=""
+  for cert_path in "$NGXCrtDir"/*.crt; do
+    cert_file=${cert_path##*/}
+    key_file="${cert_file%.crt}.key"
+    common_name=$(openssl x509 -noout -subject -in "$cert_path" | sed 's/.*CN = //' | sed 's/, OU =.*$//' | sed 's/\"//g')
+    if [ "$common_name" == "$server_name" ] && [ -f "${NGXCrtDir}/${key_file}" ]; then
+      ssl_detect=true
+      ssl_crt="$cert_file"
+      ssl_key="$key_file"
+      break
+    fi
+  done
+
+  if [ $ssl_detect = true ]; then
     echo "[I] SSL certificate was detected. SSL will be configured."
     sslblock="#SSL Configuration
     listen ${NGXMAN_SSL_PORT-443} ssl;
     listen [::]:${NGXMAN_SSL_PORT-443} ssl;
-    ssl_certificate ${NGXCrtDir}/${server_name}.crt;
-    ssl_certificate_key ${NGXCrtDir}/${server_name}.key;
+    ssl_certificate ${NGXCrtDir}/${ssl_crt};
+    ssl_certificate_key ${NGXCrtDir}/${ssl_key};
     ssl_session_timeout 5m;
     ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
     ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:HIGH:!aNULL:!MD5:!RC4:!DHE;
