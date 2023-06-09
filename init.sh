@@ -20,10 +20,10 @@ MIRROR=$(echo "${MIRROR-https://raw.githubusercontent.com/benzBrake/VPSReady/mai
 
 # 系统检测
 _SUPPORT=false
-if [ ! -z "$(command -v apt-get)" ]; then
+if [ -n "$(command -v apt-get)" ]; then
     _SUPPORT=true
 fi
-if [ ! -z "$(command -v apk)" ]; then
+if [ -n "$(command -v apk)" ]; then
     _SUPPORT=true
 fi
 
@@ -44,7 +44,11 @@ fi
 if [ "$TOTAL_RAM" -le 64 ]; then
     INSTALL_NGINX=false
 fi
+# 如果已经安装了就跳过
 
+if pgrep dockerd >/dev/null 2>&1; then
+    INSTALL_DOCKER=false
+fi
 # 1.安装基础软件包
 info "Install required software"
 if [ -n "$(command -v apt-get)" ]; then
@@ -206,8 +210,7 @@ mkdir /data/rclone
 curl https://rclone.org/install.sh | bash
 
 # 10.启用 BBR
-sysctl net.ipv4.tcp_available_congestion_control | grep bbr
-if [ $? -ne 0 ]; then
+if sysctl net.ipv4.tcp_available_congestion_control | grep bbr; then
     echo "net.core.default_qdisc=fq" >>/etc/sysctl.conf
     echo "net.ipv4.tcp_congestion_control=bbr" >>/etc/sysctl.con
     sysctl -p
