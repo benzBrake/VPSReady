@@ -71,10 +71,10 @@ LOCALAGEDAILIES="${BS_LOCAL_HISTORY:-3}"
 DELETE_REMOTE_FILE_FLG=false
 
 # Rclone remote name
-RCLONE_NAME="/${BS_RCLONE_NAME}"
+RCLONE_NAME="${BS_RCLONE_NAME}"
 
 # Rclone remote folder name (default "")
-RCLONE_FOLDER="$(hostname)"
+RCLONE_FOLDER="/$(hostname)"
 
 # Upload local file to FTP server flag (true: upload, false: not upload)
 FTP_FLG=false
