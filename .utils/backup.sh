@@ -23,6 +23,9 @@
 # Auto delete Google Drive's or FTP server's remote file (option)
 
 [[ $EUID -ne 0 ]] && echo "Error: This script must be run as root!" && exit 1
+if [ -f "/data/.ezenv" ]; then
+    . "/data/.ezenv"
+fi
 if [ -f "/data/.profile" ]; then
     . "/data/.profile"
 fi
@@ -68,7 +71,7 @@ LOCALAGEDAILIES="${BS_LOCAL_HISTORY:-3}"
 DELETE_REMOTE_FILE_FLG=false
 
 # Rclone remote name
-RCLONE_NAME="${BS_RCLONE_NAME}"
+RCLONE_NAME="/${BS_RCLONE_NAME}"
 
 # Rclone remote folder name (default "")
 RCLONE_FOLDER="$(hostname)"
