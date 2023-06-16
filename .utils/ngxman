@@ -301,12 +301,18 @@ function addHost() {
   for cert_path in "$NGXCrtDir"/*.crt; do
     cert_file=${cert_path##*/}
     key_file="${cert_file%.crt}.key"
-    common_name=$(openssl x509 -noout -subject -in "$cert_path" | sed 's/.*CN = //' | sed 's/, OU =.*$//' | sed 's/\"//g')
-    if [ "$common_name" == "$server_name" ] && [ -f "${NGXCrtDir}/${key_file}" ]; then
-      ssl_detect=true
-      ssl_crt="$cert_file"
-      ssl_key="$key_file"
-      break
+    if [ -f "/data/web/webcert/${key_file}" ]; then
+      dns_names=$(openssl x509 -in "/data/web/webcert/${cert_file}" -text -noout | grep 'DNS:' | sed -e 's/^.*DNS:\([^,]*\).*$/\1/')
+      for dns_name in $dns_names; do
+        if [[ "$server_name" == *"$dns_name"* || "$dns_name" == *".${server_name#*.}" ]]; then
+          ssl_detect=true
+          ssl_crt="$cert_file"
+          ssl_key="$key_file"
+        fi
+      done
+      if [ "$ssl_detect" == "true" ]; then
+        break
+      fi
     fi
   done
 
@@ -366,7 +372,7 @@ server {
 function delHost() {
   echo "[I] Installed hosts: "
   find "${NGXCfgDir}" -name "*.conf" | sed 's#.*/##' | sed "s#.conf##g"
-  read -rp "[Q] Choose the virtual host that you want to delete (Enter to skip)?: " delete_host
+  read -rp "[Q] Type the virtual host that you want to delete (Enter to skip)?: " delete_host
   if [ "$delete_host" = "" ]; then
     anykeyNothing
   else
