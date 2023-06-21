@@ -100,7 +100,8 @@ fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
 EOF
   fi
   if [ ! -f "${NGXExtDir}/enable-php-pathinfo.conf" ]; then
-    cat >"${NGXExtDir}/enable-php-pathinfo.conf" <<EOF
+    if [ "$IS_DOCKER" = "true" ]; then
+      cat >"${NGXExtDir}/enable-php-pathinfo.conf" <<EOF
 location ~ [^/]\.php(/|\$)
 {
     fastcgi_pass  php:9000;
@@ -109,6 +110,17 @@ location ~ [^/]\.php(/|\$)
     include ${NGXExtDir}/pathinfo.conf;
 }
 EOF
+    else
+      cat >"${NGXExtDir}/enable-php-pathinfo.conf" <<EOF
+location ~ [^/]\.php(/|\$)
+{
+    fastcgi_pass  127.0.0.1:9000;
+    fastcgi_index index.php;
+    include ${NGXExtDir}/fastcgi.conf;
+    include ${NGXExtDir}/pathinfo.conf;
+}
+EOF
+    fi
   fi
 
   # Prepare typecho rewrite rule
