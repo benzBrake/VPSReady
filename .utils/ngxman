@@ -21,7 +21,10 @@ CMPFileDir="/data/docker-compose.yml"
 
 # OS destribution
 DESPCN=$(lsb_release -si)
-
+IS_DOCKER=true
+if [[ -z $(command -v docker-compose) ]]; then
+  IS_DOCKER=false
+fi
 # Create Directory
 [ ! -d "${NGXBaseDir}" ] && mkdir -p ${NGXBaseDir}
 [ ! -d "${NGXCfgDir}" ] && mkdir -p ${NGXCfgDir}
@@ -65,7 +68,8 @@ EOF
   fi
   # Prepare php enable config
   if [ ! -f "${NGXExtDir}/enable-php.conf" ]; then
-    cat >"${NGXExtDir}/enable-php.conf" <<EOF
+    if [ "$IS_DOCKER" = "true" ]; then
+      cat >"${NGXExtDir}/enable-php.conf" <<EOF
 location ~ [^/]\.php(/|\$)
 {
     fastcgi_pass  php:9000;
@@ -73,6 +77,16 @@ location ~ [^/]\.php(/|\$)
     include ${NGXExtDir}/fastcgi.conf;
 }
 EOF
+    else
+      cat >"${NGXExtDir}/enable-php.conf" <<EOF
+location ~ [^/]\.php(/|\$)
+{
+    fastcgi_pass  127.0.0.1:9000;
+    fastcgi_index index.php;
+    include ${NGXExtDir}/fastcgi.conf;
+}
+EOF
+    fi
   fi
 
   # Prepare php pathinfo enable config
@@ -439,24 +453,39 @@ function disableHost() {
 
 function checkConf() {
   echo -e "[I] Checking configuration files ..."
-  docker-compose -f ${CMPFileDir} exec nginx nginx -t
-  err=$?
+  if [ "$IS_DOCKER" = "true" ]; then
+    docker-compose -f ${CMPFileDir} exec nginx nginx -t
+    err=$?
+  else
+    nginx -t
+    err=$?
+  fi
   anykey
   return ${err}
 }
 
 function reloadNginx() {
   echo -e "[I] Reloading nginx ..."
-  docker-compose -f ${CMPFileDir} exec nginx nginx -s reload
-  err=$?
+  if [ "$IS_DOCKER" = "true" ]; then
+    docker-compose -f ${CMPFileDir} exec nginx nginx -s reload
+    err=$?
+  else
+    nginx -s reload
+    err=$?
+  fi
   anykey
   return ${err}
 }
 
 function restartNginx() {
   echo -e "[I] Restarting nginx ..."
-  docker-compose -f ${CMPFileDir} restart nginx
-  err=$?
+  if [ "$IS_DOCKER" = "true" ]; then
+    docker-compose -f ${CMPFileDir} restart nginx
+    err=$?
+  else
+    /etc/init.d/nginx restart
+    err=$?
+  fi
   anykey
   return ${err}
 }
