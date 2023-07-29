@@ -110,16 +110,14 @@ else
         fi
         # 仅公钥登录
         info "Enable only login with public key"
-        if grep -i '^PasswordAuthentication\s\+no' /etc/ssh/sshd_config >/dev/null; then
-            if grep -i '^PasswordAuthentication\s\+yes' /etc/ssh/sshd_config >/dev/null; then
-                sed -i "s@^PasswordAuthentication\s\+yes@PasswordAuthentication no@" /etc/ssh/sshd_config
+        if grep -i '^PasswordAuthentication.*' /etc/ssh/sshd_config >/dev/null; then
+            if grep -i '^#PasswordAuthentication.*' /etc/ssh/sshd_config >/dev/null; then
+                sed -i "s@^#PasswordAuthentication.*@&\nPasswordAuthentication no@" /etc/ssh/sshd_config
             else
-                if grep -i '^#PasswordAuthentication.*' /etc/ssh/sshd_config >/dev/null; then
-                    sed -i "s@^#PasswordAuthentication.*@&\nPasswordAuthentication no@" /etc/ssh/sshd_config
-                else
-                    echo 'PasswordAuthentication no' >>/etc/ssh/sshd_config
-                fi
+                echo 'PasswordAuthentication no' >>/etc/ssh/sshd_config
             fi
+        else
+            sed -i "s@^PasswordAuthentication.*@&\nPasswordAuthentication no@" /etc/ssh/sshd_config
         fi
         # SSH端口
         if [ "$NOT_CHANGE_SSH_PORT" != "true" ]; then
