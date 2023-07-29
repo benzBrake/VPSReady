@@ -37,6 +37,9 @@ INSTALL_MYSQL=true
 INSTALL_DOCKER=true
 INSTALL_NGINX=true
 TOTAL_RAM=$(free -m | awk '$1=="This" || NR == 2' | awk '{print $2}')
+if [ "$TOTAL_RAM" -gt 8192 ]; then
+    TOTAL_RAM=$(free -m | awk '$1=="This" || NR == 2' | awk '{print $7}')
+fi
 if [ "$TOTAL_RAM" -le 512 ]; then
     INSTALL_MYSQL=false
     INSTALL_DOCKER=false
