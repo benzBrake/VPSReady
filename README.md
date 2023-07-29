@@ -39,6 +39,6 @@ cd /data
 ### 如果不需要修改 SSH 端口
 
 ```shell
-NOT_CHANGE_SSH_PORT=1 ./init.sh
+NOT_CHANGE_SSH_PORT=true ./init.sh
 ```
 
