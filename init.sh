@@ -59,7 +59,7 @@ if [ -n "$(command -v apt-get)" ]; then
     apt-get -y install curl ca-certificates vim unzip ftp openssl >/dev/null
     [ "$INSTALL_MYSQL" = true ] && apt-get -y install default-mysql-client >/dev/null
 elif [ -n "$(command -v apk)" ]; then
-    apk add --update --no-cache curl ca-certificates vim ftp tzdata openssl >/dev/null
+    apk add --update --no-cache curl ca-certificates vim lftp tzdata openssl >/dev/null
     [ "$INSTALL_MYSQL" = true ] && apk add --update --nocache mysql-client >/dev/null
 else
     err "Do not support your system!"
