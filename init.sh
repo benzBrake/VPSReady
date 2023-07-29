@@ -111,7 +111,7 @@ else
         # 仅公钥登录
         info "Enable only login with public key"
         if grep -i '^PasswordAuthentication.*' /etc/ssh/sshd_config >/dev/null; then
-            sed -i "s@^PasswordAuthentication.*@&\nPasswordAuthentication no@" /etc/ssh/sshd_config
+            sed -i "s@^PasswordAuthentication.*@PasswordAuthentication no@" /etc/ssh/sshd_config
         else
             if grep -i '^#PasswordAuthentication.*' /etc/ssh/sshd_config >/dev/null; then
                 sed -i "s@^#PasswordAuthentication.*@&\nPasswordAuthentication no@" /etc/ssh/sshd_config
