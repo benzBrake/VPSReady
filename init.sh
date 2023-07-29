@@ -123,13 +123,11 @@ else
         fi
         # SSH端口
         if [ "$NOT_CHANGE_SSH_PORT" != "true" ]; then
-        info "Change SSH port to 33022"
-        RESULT=$(grep "^[pP][oO][rR][tT]\s*" /etc/ssh/sshd_config)
-        if [ -n "$RESULT" ]; then
-            sed -i "s#$RESULT#Port 33022#" /etc/ssh/sshd_config
-        else
-            sed -i "5aPort 33022" /etc/ssh/sshd_config
-        fi
+            info "Change SSH port to 33022"
+            RESULT=$(grep "^[pP][oO][rR][tT]\s*" /etc/ssh/sshd_config)
+            if [ -n "$RESULT" ]; then
+                sed -i "s#$RESULT#Port 33022#" /etc/ssh/sshd_config
+            fi
         fi
         # 重启SSH服务
         info "Restart SSH Service"
