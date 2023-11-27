@@ -125,6 +125,14 @@ else
             RESULT=$(grep "^[pP][oO][rR][tT]\s*" /etc/ssh/sshd_config)
             if [ -n "$RESULT" ]; then
                 sed -i "s#$RESULT#Port 33022#" /etc/ssh/sshd_config
+            else
+                RESULT=$(grep "^#[pP][oO][rR][tT]\s*" /etc/ssh/sshd_config)
+                if [ -n "$RESULT" ]; then
+                    sed -i "/^#[pP][oO][rR][tT]\s*/a Port 33022" /etc/ssh/sshd_config
+                else
+                    echo "Port 33022" >> /etc/ssh/sshd_config
+                fi
+                
             fi
         fi
         # 重启SSH服务
