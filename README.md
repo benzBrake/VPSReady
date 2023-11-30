@@ -23,14 +23,22 @@ apk update && apk add git
 
 ```shell
 git clone https://github.com/benzBrake/VPSReady /data
-chmod +x /data/init.sh
 ```
+
+如果不 VPS 支持 IPv4，使用 ghproxy 镜像网站
+
+```
+git clone https://mirror.ghproxy.com/https://github.com/benzBrake/VPSReady /data
+```
+
+
 
 ## 使用
 
 ### 初始化 VPS
 ```shell
 cd /data
+chmod +x /init.sh
 ./init.sh
 ```
 
@@ -39,6 +47,8 @@ cd /data
 使用 ghproxy 镜像网站
 
 ```shell
+cd /data
+chmod +x /init.sh
 MIRROR=https://mirror.ghproxy.com ./init.sh
 ```
 
