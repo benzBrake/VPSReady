@@ -26,14 +26,20 @@ git clone https://github.com/benzBrake/VPSReady /data
 chmod +x /data/init.sh
 ```
 
-
-
 ## 使用
 
 ### 初始化 VPS
 ```shell
 cd /data
 ./init.sh
+```
+
+### 如果 VPS 不支持 IPv4
+
+使用 ghproxy 镜像网站
+
+```shell
+MIRROR=https://mirror.ghproxy.com ./init.sh
 ```
 
 ### 如果不需要修改 SSH 端口

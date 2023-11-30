@@ -16,7 +16,12 @@ suc() {
     echo "[S] $*"
 }
 
-MIRROR=$(echo "${MIRROR-https://raw.githubusercontent.com/benzBrake/VPSReady/main}" | sed 's#/$##g')
+MIRROR=$(echo "${MIRROR}" | sed 's#/$##g')
+# 检查MIRROR是否为空
+if [ -n "${MIRROR}" ]; then
+    # 使用sed在末尾添加斜杠
+    MIRROR="${MIRROR}/"
+fi
 
 # 系统检测
 _SUPPORT=false
@@ -95,7 +100,7 @@ else
             info "Local public key not found, downloading..."
             cp /data/pub/xiaoji.pub "${PUBKeyFile}" >/dev/null
         else
-            curl -sSL "${MIRROR}/pub/xiaoji.pub" -o "${PUBKeyFile}"
+            curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/pub/xiaoji.pub" -o "${PUBKeyFile}"
         fi
         if [ ! -f ~/.ssh/authorized_keys ]; then
             cat "${PUBKeyFile}" >>~/.ssh/authorized_keys
@@ -166,7 +171,7 @@ else
             chmod +x /data/.init/docker.sh
             /data/.init/docker.sh
         else
-            bash -c "$(curl -sSL "${MIRROR}/.init/docker.sh" -o -)"
+            bash -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/docker.sh" -o -)"
         fi
         systemctl enable docker
         systemctl start docker
@@ -187,7 +192,7 @@ else
             chmod +x /data/.init/nginx.sh
             /data/.init/nginx.sh
         else
-            bash -c "$(curl -sSL "${MIRROR}/.init/nginx.sh" -o -)"
+            bash -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/nginx.sh" -o -)"
         fi
     }
 fi
@@ -199,7 +204,7 @@ if [ ! -f /root/.vimrc ]; then
 fi
 
 # 7.安装 ez-bash
-git clone https://github.com/benzBrake/.ez-bash /data/.ez
+git clone "${MIRROR}https://github.com/benzBrake/.ez-bash" /data/.ez
 chmod +x /data/.ez/*.bash
 chmod +x /data/.ez/*/*.bash
 
@@ -224,6 +229,6 @@ if sysctl net.ipv4.tcp_available_congestion_control | grep bbr; then
 fi
 
 # 11.安装 acme.sh
-sh /data/.init/acme.sh
+sh /data/.init/acme.sh MIRROR="${MIRROR}"
 
 suc "ALL Done"
