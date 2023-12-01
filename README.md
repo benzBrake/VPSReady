@@ -78,6 +78,7 @@ https://github.moeyy.xyz/
 
 ### 安装 Wrap
 
-```
-
+```shell
+# 自动配置 WARP WireGuard IPv4 网络（IPv4 出站流量走 WARP 网络）
+bash <(curl -fsSL https://ghmirror.pp.ua/https://raw.githubusercontent.com/P3TERX/warp.sh/main/warp.sh) 4
 ```
