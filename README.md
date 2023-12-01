@@ -28,7 +28,7 @@ git clone https://github.com/benzBrake/VPSReady /data
 如果不 VPS 支持 IPv4，使用 ghproxy 镜像网站
 
 ```
-git clone https://mirror.ghproxy.com/https://github.com/benzBrake/VPSReady /data
+git clone https://ghmirror.pp.ua/https://github.com/benzBrake/VPSReady /data
 ```
 
 
@@ -49,7 +49,7 @@ chmod +x /init.sh
 ```shell
 cd /data
 chmod +x /init.sh
-MIRROR=https://mirror.ghproxy.com ./init.sh
+MIRROR=https://ghmirror.pp.ua ./init.sh
 ```
 
 ### 如果不需要修改 SSH 端口
