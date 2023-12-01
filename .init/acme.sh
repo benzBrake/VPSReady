@@ -1,5 +1,34 @@
 #!/bin/sh
+
+install_cron() {
+    # Check the Linux distribution
+    if [ -f /etc/redhat-release ]; then
+        # CentOS
+        echo "Installing cron on CentOS..."
+        yum install -y cronie
+        systemctl enable crond
+        systemctl start crond
+    elif [ -f /etc/debian_version ]; then
+        # Debian or Ubuntu
+        echo "Installing cron on Debian/Ubuntu..."
+        apt-get update
+        apt-get install -y cron
+        systemctl enable cron
+        systemctl start cron
+    elif [ -f /etc/alpine-release ]; then
+        # Alpine
+        echo "Installing cron on Alpine..."
+        apk add --no-cache cron
+        rc-update add cron
+        rc-service cron start
+    else
+        echo "Unsupported Linux distribution."
+        exit 1
+    fi
+    echo "Cron installed successfully."
+}
 if [ -d "/data/.acme.sh" ]; then
+    install_cron
     grep .acme.sh/acme.sh.env ~/.bashrc > /dev/null
     if [ $? -ne 0 ]; then
         echo ". \"/data/.acme.sh/acme.sh.env\"" > ~/.bashrc
