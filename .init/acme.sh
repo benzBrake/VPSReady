@@ -27,8 +27,8 @@ install_cron() {
     fi
     echo "Cron installed successfully."
 }
+install_cron
 if [ -d "/data/.acme.sh" ]; then
-    install_cron
     grep .acme.sh/acme.sh.env ~/.bashrc > /dev/null
     if [ $? -ne 0 ]; then
         echo ". \"/data/.acme.sh/acme.sh.env\"" > ~/.bashrc
