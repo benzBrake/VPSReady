@@ -48,7 +48,7 @@ chmod +x /init.sh
 
 ```shell
 cd /data
-chmod +x /init.sh
+chmod +x ./init.sh
 MIRROR=https://ghmirror.pp.ua ./init.sh
 ```
 
