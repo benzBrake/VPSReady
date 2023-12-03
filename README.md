@@ -43,6 +43,8 @@ nameserver 2a03:7900:2:0:31:3:104:161
 MIRROR=https://ghmirror.pp.ua bash <(curl -fsSL https://ghmirror.pp.ua/https://github.com/benzBrake/warp.sh/raw/main/warp.sh) 4
 ```
 
+> PS: 上边使用的 https://ghmirror.pp.ua 是一个 GitHub 镜像，你可以自行部署 https://github.com/benzBrake/gh-proxy/
+
 ## 安装脚本
 
 ### 安装 Git
