@@ -37,7 +37,7 @@ apk update && apk add git
 git clone https://github.com/benzBrake/VPSReady /data
 ```
 
-如果不 VPS 支持 IPv4，使用 ghproxy 镜像网站
+如果不 VPS 支持 IPv4，可以使用 ghproxy 镜像网站（**不过更推荐先使用 Wrap 增加 IPv4 访问能力，下同**）
 
 ```
 git clone https://ghmirror.pp.ua/https://github.com/benzBrake/VPSReady /data
@@ -78,7 +78,8 @@ https://github.moeyy.xyz/
 
 ### 安装 Wrap
 
+自动配置 WARP WireGuard IPv4 网络（IPv4 出站流量走 WARP 网络）
+
 ```shell
-# 自动配置 WARP WireGuard IPv4 网络（IPv4 出站流量走 WARP 网络）
-bash <(curl -fsSL https://ghmirror.pp.ua/https://raw.githubusercontent.com/P3TERX/warp.sh/main/warp.sh) 4
+MIRROR=https://ghmirror.pp.ua bash <(curl -fsSL https://ghmirror.pp.ua/https://github.com/benzBrake/warp.sh/raw/main/warp.sh) 4
 ```
