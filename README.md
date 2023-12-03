@@ -16,6 +16,33 @@ VPS初始化脚本
 8. 自动启用 BBR
 9. 安装 acme.sh
 
+## 玩 VPS 前置
+
+如果是贪便宜购入了只有 IPv6 的小鸡（不包括有 IPv4 的 NAT），那么你是无法直接安装存储在 Github 上的脚本的，因为 Github 没有 IPv6 地址。
+
+解决办法有两个一个是使用 NAT64 服务，另一个是使用 Clouflare 提供的 WARP
+
+### 使用 NAT64 服务
+
+```
+cp /etc/resolv.conf /etc/resolv.conf.bak
+rm -f /etc/resolv.conf
+vim /etc/resolv.conf
+
+nameserver 2001:67c:27e4:15::6411
+nameserver 2001:67c:27e4::64
+
+nameserver 2a03:7900:2:0:31:3:104:161
+```
+
+### 使用 WARP
+
+自动配置 WARP WireGuard IPv4 网络（IPv4 出站流量走 WARP 网络）
+
+```shell
+MIRROR=https://ghmirror.pp.ua bash <(curl -fsSL https://ghmirror.pp.ua/https://github.com/benzBrake/warp.sh/raw/main/warp.sh) 4
+```
+
 ## 安装脚本
 
 ### 安装 Git
@@ -37,12 +64,6 @@ apk update && apk add git
 git clone https://github.com/benzBrake/VPSReady /data
 ```
 
-如果不 VPS 支持 IPv4，可以使用 ghproxy 镜像网站（**不过更推荐先使用 Wrap 增加 IPv4 访问能力，下同**）
-
-```
-git clone https://ghmirror.pp.ua/https://github.com/benzBrake/VPSReady /data
-```
-
 ## 使用
 
 ### 初始化 VPS
@@ -50,16 +71,6 @@ git clone https://ghmirror.pp.ua/https://github.com/benzBrake/VPSReady /data
 cd /data
 chmod +x ./init.sh
 ./init.sh
-```
-
-### 如果 VPS 不支持 IPv4
-
-使用 ghproxy 镜像网站
-
-```shell
-cd /data
-chmod +x ./init.sh
-MIRROR=https://ghmirror.pp.ua ./init.sh
 ```
 
 ### 如果不需要修改 SSH 端口
@@ -76,10 +87,3 @@ https://github.moeyy.xyz/
 
 利用上边初始化 VPS 如有需要，也可以安装的脚本。
 
-### 安装 Wrap
-
-自动配置 WARP WireGuard IPv4 网络（IPv4 出站流量走 WARP 网络）
-
-```shell
-MIRROR=https://ghmirror.pp.ua bash <(curl -fsSL https://ghmirror.pp.ua/https://github.com/benzBrake/warp.sh/raw/main/warp.sh) 4
-```
