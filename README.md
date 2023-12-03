@@ -48,7 +48,7 @@ git clone https://ghmirror.pp.ua/https://github.com/benzBrake/VPSReady /data
 ### 初始化 VPS
 ```shell
 cd /data
-chmod +x /init.sh
+chmod +x ./init.sh
 ./init.sh
 ```
 
