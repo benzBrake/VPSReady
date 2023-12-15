@@ -23,6 +23,10 @@ if [ -n "${MIRROR}" ]; then
     MIRROR="${MIRROR}/"
 fi
 
+if [ -z "${LET_MAIL}" ]; then
+    LET_MAIL="webmaster@woai.ru"
+fi
+
 # 系统检测
 _SUPPORT=false
 if [ -n "$(command -v apt-get)" ]; then
@@ -229,6 +233,6 @@ if sysctl net.ipv4.tcp_available_congestion_control | grep bbr; then
 fi
 
 # 11.安装 acme.sh
-sh /data/.init/acme.sh MIRROR="${MIRROR}"
+sh /data/.init/acme.sh MIRROR="${MIRROR}" LET_MAIL="${LET_MAIL}"
 
 suc "ALL Done"

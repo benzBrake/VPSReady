@@ -81,6 +81,20 @@ chmod +x ./init.sh
 NOT_CHANGE_SSH_PORT=true ./init.sh
 ```
 
+### 自定义 LET SSL 的邮箱
+
+```shell
+LET_MAIL=bbb@ccc.com ./init.sh
+```
+
+### 多个参数
+
+```shell
+NOT_CHANGE_SSH_PORT=true LET_MAIL=bbb@ccc.com ./init.sh
+```
+
+
+
 ## 其他 GitHub 镜像
 
 https://github.moeyy.xyz/

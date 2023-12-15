@@ -1,5 +1,9 @@
 #!/bin/sh
 
+if [ -z "${LET_MAIL}" ]; then
+    LET_MAIL="webmaster@woai.ru"
+fi
+
 install_cron() {
     # Check the Linux distribution
     if [ -f /etc/redhat-release ]; then
@@ -40,7 +44,7 @@ else
     cd /tmp/acme.sh
     ./acme.sh --install  \
     --home /data/.acme.sh \
-    --accountemail  "webmaster@woai.ru"
+    --accountemail  "${LET_MAIL}"
     rm -rf /tmp/acme.sh
 fi
 . "/data/.acme.sh/acme.sh.env"
