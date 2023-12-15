@@ -1,7 +1,14 @@
 #!/usr/bin/env sh
+
 if [ -z "${KEY_URL}" ]; then
     KEY_URL="${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/pub/xiaoji.pub"
 fi
+
+# Function to generate a random number
+randomNum() {
+    command -v shuf > /dev/null && shuf -i 100000-999999 -n 1 || jot -r 1 100000 999999
+}
+
 # 安装公钥
 info "Install public key"
 mkdir -p /tmp ~/.ssh >/dev/null
@@ -11,13 +18,15 @@ while :; do
     [ ! -f "${PUBKeyFile}" ] && break
     PUBKeyFile="/tmp/$(randomNum).pub"
 done
-# 有本地用本地（Git clone 项目的时候本地有key），没有就从 Mirror 下载
+
+# 有本地用本地（Git clone 项目的时候本地有 key），没有就从 Mirror 下载
 if [ -f /data/pub/xiaoji.pub ]; then
     info "Local public key not found, downloading..."
     cp /data/pub/xiaoji.pub "${PUBKeyFile}" >/dev/null
 else
     curl -sSL "${KEY_URL}" -o "${PUBKeyFile}"
 fi
+
 if [ ! -f ~/.ssh/authorized_keys ]; then
     cat "${PUBKeyFile}" >>~/.ssh/authorized_keys
 else
