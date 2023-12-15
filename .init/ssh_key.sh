@@ -10,7 +10,7 @@ randomNum() {
 }
 
 # 安装公钥
-info "Install public key"
+echo "Install public key"
 mkdir -p /tmp ~/.ssh >/dev/null
 PUBKeyFile="/tmp/$(randomNum).pub"
 while :; do
@@ -21,7 +21,7 @@ done
 
 # 有本地用本地（Git clone 项目的时候本地有 key），没有就从 Mirror 下载
 if [ -f /data/pub/xiaoji.pub ]; then
-    info "Local public key not found, downloading..."
+    echo "Local public key not found, downloading..."
     cp /data/pub/xiaoji.pub "${PUBKeyFile}" >/dev/null
 else
     curl -sSL "${KEY_URL}" -o "${PUBKeyFile}"
@@ -31,7 +31,7 @@ if [ ! -f ~/.ssh/authorized_keys ]; then
     cat "${PUBKeyFile}" >>~/.ssh/authorized_keys
 else
     AuthKeyStr=$(cat ~/.ssh/authorized_keys)
-    PUBKeyStr=$(sed <"${PUBKeyFile}" 's@^\s*@@;s@\s*$@@')
+    PUBKeyStr=$(awk '{$1=$1};1' < "${PUBKeyFile}")
     CompareResult=$(echo "${AuthKeyStr}" | grep "${PUBKeyStr}")
     [ "$CompareResult" = "" ] && {
         cat "${PUBKeyFile}" >>~/.ssh/authorized_keys
