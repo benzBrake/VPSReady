@@ -93,11 +93,19 @@ LET_MAIL=bbb@ccc.com ./init.sh
 NOT_CHANGE_SSH_PORT=true LET_MAIL=bbb@ccc.com ./init.sh
 ```
 
-
-
 ## 其他 GitHub 镜像
 
 https://github.moeyy.xyz/
+
+## 单独运行其中的初始化脚本
+
+### 安装 SSH 公钥
+
+```
+bash -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/ssh_key.sh" -o -)"
+```
+
+
 
 ## 其他 VPS 一键脚本
 

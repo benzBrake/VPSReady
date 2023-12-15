@@ -90,32 +90,10 @@ else
         # 备份SSH配置
         info "Backup SSH config"
         cp -f /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
-        # 添加公钥 xiaoji
-        info "Install public key"
-        mkdir -p /tmp ~/.ssh >/dev/null
-        PUBKeyFile="/tmp/$(randomNum).pub"
-        while :; do
-            echo >/dev/null
-            [ ! -f "${PUBKeyFile}" ] && break
-            PUBKeyFile="/tmp/$(randomNum).pub"
-        done
-        # 有本地用本地（Git clone 项目的时候本地有key），没有就从 Mirror 下载
-        if [ -f /data/pub/xiaoji.pub ]; then
-            info "Local public key not found, downloading..."
-            cp /data/pub/xiaoji.pub "${PUBKeyFile}" >/dev/null
+        if [ -f "/data/.init/ssh_key.sh" ]; then
+            sh /data/.init/ssh_key.sh MIRROR="${MIRROR}"
         else
-            curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/pub/xiaoji.pub" -o "${PUBKeyFile}"
-        fi
-        if [ ! -f ~/.ssh/authorized_keys ]; then
-            cat "${PUBKeyFile}" >>~/.ssh/authorized_keys
-        else
-            AuthKeyStr=$(cat ~/.ssh/authorized_keys)
-            PUBKeyStr=$(sed <"${PUBKeyFile}" 's@^\s*@@;s@\s*$@@')
-            CompareResult=$(echo "${AuthKeyStr}" | grep "${PUBKeyStr}")
-            [ "$CompareResult" = "" ] && {
-                cat "${PUBKeyFile}" >>~/.ssh/authorized_keys
-            }
-            chmod 600 ~/.ssh/authorized_keys >/dev/null
+            bash -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/ssh_key.sh" -o -)"
         fi
         # 仅公钥登录
         info "Enable only login with public key"
