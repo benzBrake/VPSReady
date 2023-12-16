@@ -6,12 +6,12 @@ fi
 
 # Function to generate a random number
 randomNum() {
-    command -v shuf > /dev/null && shuf -i 100000-999999 -n 1 || jot -r 1 100000 999999
+    command -v shuf >/dev/null && shuf -i 100000-999999 -n 1 || jot -r 1 100000 999999
 }
 
 # 安装公钥
 echo "Install public key"
-mkdir -p /tmp ~/.ssh >/dev/null
+mkdir -p /tmp "$HOME/.ssh" >/dev/null
 PUBKeyFile="/tmp/$(randomNum).pub"
 while :; do
     echo >/dev/null
@@ -27,14 +27,14 @@ else
     curl -sSL "${KEY_URL}" -o "${PUBKeyFile}"
 fi
 
-if [ ! -f ~/.ssh/authorized_keys ]; then
-    cat "${PUBKeyFile}" >>~/.ssh/authorized_keys
+if [ ! -f "$HOME/.ssh/authorized_keys" ]; then
+    cat "${PUBKeyFile}" >>"$HOME/.ssh/authorized_keys"
 else
-    AuthKeyStr=$(cat ~/.ssh/authorized_keys)
-    PUBKeyStr=$(awk '{$1=$1};1' < "${PUBKeyFile}")
+    AuthKeyStr=$(cat "$HOME/.ssh/authorized_keys")
+    PUBKeyStr=$(awk '{$1=$1};1' <"${PUBKeyFile}")
     CompareResult=$(echo "${AuthKeyStr}" | grep "${PUBKeyStr}")
     [ "$CompareResult" = "" ] && {
-        cat "${PUBKeyFile}" >>~/.ssh/authorized_keys
+        cat "${PUBKeyFile}" >>"$HOME/.ssh/authorized_keys"
     }
-    chmod 600 ~/.ssh/authorized_keys >/dev/null
+    chmod 600 "$HOME/.ssh/authorized_keys" >/dev/null
 fi
