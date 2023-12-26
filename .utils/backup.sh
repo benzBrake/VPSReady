@@ -51,8 +51,11 @@ TEMPDIR="${BS_TEMP_DIR:-/backups/temp/}"
 LOGFILE="${BS_LOG_FILE:-/backups/backup.log}"
 
 # OPTIONAL:
+# If you wanto connect to remote MySQL database
+MYSQL_HOST="${BS_MYSQL_HOST:-127.0.0.1}"
+MYSQL_PORT="${BS_MYSQL_PORT:-3306}"
 # If you want to backup the MySQL database, enter the MySQL root password below, otherwise leave it blank
-MYSQL_ROOT_PASSWORD="${BS_MYSQL_PASSWORD}"
+MYSQL_ROOT_PASSWORD="${BS_MYSQL_PASSWORD-root}"
 
 # Below is a list of MySQL database name that will be backed up
 # If you want backup ALL databases, leave it blank.
@@ -167,7 +170,7 @@ mysql_backup() {
         log "MySQL root password not set, MySQL backup skipped"
     else
         log "MySQL dump start"
-        mysql -u root -p"${MYSQL_ROOT_PASSWORD}" 2>/dev/null <<EOF
+        mysql -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" -u root -p"${MYSQL_ROOT_PASSWORD}" 2>/dev/null <<EOF
 exit
 EOF
         if [ $? -ne 0 ]; then
@@ -175,7 +178,7 @@ EOF
             exit 1
         fi
         if [[ "${MYSQL_DATABASE_NAME[@]}" == "" ]]; then
-            mysqldump -u root -p"${MYSQL_ROOT_PASSWORD}" --all-databases > "${SQLFILE}" 2>/dev/null
+            mysqldump -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" -u root -p"${MYSQL_ROOT_PASSWORD}" --all-databases > "${SQLFILE}" 2>/dev/null
             if [ $? -ne 0 ]; then
                 log "MySQL all databases backup failed"
                 exit 1
@@ -187,7 +190,7 @@ EOF
             for db in ${MYSQL_DATABASE_NAME[@]}; do
                 unset DBFILE
                 DBFILE="${TEMPDIR}${db}_${BACKUPDATE}.sql"
-                mysqldump -u root -p"${MYSQL_ROOT_PASSWORD}" ${db} > "${DBFILE}" 2>/dev/null
+                mysqldump -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" -u root -p"${MYSQL_ROOT_PASSWORD}" ${db} > "${DBFILE}" 2>/dev/null
                 if [ $? -ne 0 ]; then
                     log "MySQL database name [${db}] backup failed, please check database name is correct and try again"
                     exit 1
