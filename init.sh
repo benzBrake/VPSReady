@@ -144,8 +144,8 @@ else
         warn "Do not support none OpenSSH Server!"
     fi
     # 4.新增用户
-    [ $INSTALL_MYSQL = true ] && /usr/sbin/useradd -u 1001 mysql 2>/dev/null
-    /usr/sbin/useradd -u 1002 www 2>/dev/null
+    [ $INSTALL_MYSQL = true ] && /usr/sbin/useradd -u 1001 -s /sbin/nologin mysql 2>/dev/null
+    /usr/sbin/useradd -u 1002 -s /sbin/nologin www 2>/dev/null
     # 5.安装 Docker
     if [ $INSTALL_DOCKER = true ] && [ -z "$(command -v docker)" ]; then
         info "Installing Docker"
