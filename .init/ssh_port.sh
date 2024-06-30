@@ -1,5 +1,6 @@
 #!/bin/bash
 source /data/.profile
+source /data/.utils/common.sh
 if [ -e "/etc/ssh/sshd_config" ]; then
     # 备份SSH配置
     info "Backup SSH config"

@@ -7,21 +7,8 @@ SCRIPT_DIR=$(
 chmod +x "${SCRIPT_DIR}/.init/*.sh"
 chmod +x "${SCRIPT_DIR}/.utils/*"
 
-randomNum() {
-    awk -v min=10000 -v max=99999 'BEGIN{srand(); print int(min+rand()*(max-min+1))}'
-}
-info() {
-    echo "[I] $*"
-}
-warn() {
-    echo "[W] $*"
-}
-err() {
-    echo "[E] $*"
-}
-suc() {
-    echo "[S] $*"
-}
+
+source "${SCRIPT_DIR}/.utils/common.sh"
 
 MIRROR=$(echo "${MIRROR}" | sed 's#/$##g')
 # 检查MIRROR是否为空
