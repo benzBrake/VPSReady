@@ -1,5 +1,12 @@
 #!/usr/bin/env sh
 
+SCRIPT_DIR=$(
+    cd "$(dirname "")"
+    pwd
+)
+chmod +x "${SCRIPT_DIR}/.init/*.sh"
+chmod +x "${SCRIPT_DIR}/.utils/*"
+
 randomNum() {
     awk -v min=10000 -v max=99999 'BEGIN{srand(); print int(min+rand()*(max-min+1))}'
 }
@@ -21,6 +28,11 @@ MIRROR=$(echo "${MIRROR}" | sed 's#/$##g')
 if [ -n "${MIRROR}" ]; then
     # 使用sed在末尾添加斜杠
     MIRROR="${MIRROR}/"
+    if [ -f /data/.profile ]; then
+        sed -i "s@^export GH_MIRROR=.*@export GH_MIRROR=${MIRROR}@" /data/.profile
+    else
+        echo "export GH_MIRROR=${MIRROR}" >>/data/.profile
+    fi
 fi
 
 if [ -z "${LET_MAIL}" ]; then
@@ -65,10 +77,10 @@ fi
 info "Install required software"
 if [ -n "$(command -v apt-get)" ]; then
     apt-get update >/dev/null
-    apt-get -y install curl ca-certificates vim unzip ftp openssl bash >/dev/null
+    apt-get -y install curl ca-certificates vim unzip ftp openssl bash crontab >/dev/null
     [ "$INSTALL_MYSQL" = true ] && apt-get -y install default-mysql-client >/dev/null
 elif [ -n "$(command -v apk)" ]; then
-    apk add --update --no-cache curl ca-certificates vim lftp tzdata openssl bash >/dev/null
+    apk add --update --no-cache curl ca-certificates vim lftp tzdata openssl bash crontab >/dev/null
     [ "$INSTALL_MYSQL" = true ] && apk add --update --nocache mysql-client >/dev/null
 else
     err "Do not support your system!"
@@ -85,64 +97,34 @@ fi
 if uname -a | grep -q "Microsoft"; then
     info "WSL Environment. Skip OpenSSH / Docker Configure!"
 else
-    # 3.设置SSH登录参数
-    if [ -e "/etc/ssh/sshd_config" ]; then
-        # 备份SSH配置
-        info "Backup SSH config"
-        cp -f /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
-        if [ -f "/data/.init/ssh_key.sh" ]; then
-            sh /data/.init/ssh_key.sh MIRROR="${MIRROR}"
-        else
-            bash -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/ssh_key.sh" -o -)"
-        fi
-        # 仅公钥登录
-        info "Enable only login with public key"
-        if grep -i '^PasswordAuthentication.*' /etc/ssh/sshd_config >/dev/null; then
-            sed -i "s@^PasswordAuthentication.*@PasswordAuthentication no@" /etc/ssh/sshd_config
-        else
-            if grep -i '^#PasswordAuthentication.*' /etc/ssh/sshd_config >/dev/null; then
-                sed -i "s@^#PasswordAuthentication.*@&\nPasswordAuthentication no@" /etc/ssh/sshd_config
-            else
-                echo 'PasswordAuthentication no' >>/etc/ssh/sshd_config
+    if [ -f "/usr/sbin/scw-fetch-ssh-keys" ]; then
+        # 兼容 Scaleway
+        # 添加计划任务
+        if [ -n "$(command -v crontab)" ]; then
+            if ! crontab -l | grep -q "/data/.init/ssh_key.sh"; then
+                (
+                    crontab -l 2>/dev/null
+                    echo "@reboot /data/.init/ssh_key.sh"
+                ) | crontab -
             fi
         fi
-        # SSH端口
         if [ "$NOT_CHANGE_SSH_PORT" != "true" ]; then
-            info "Change SSH port to 33022"
-            RESULT=$(grep "^[pP][oO][rR][tT]\s*" /etc/ssh/sshd_config)
-            if [ -n "$RESULT" ]; then
-                sed -i "s#$RESULT#Port 33022#" /etc/ssh/sshd_config
-            else
-                RESULT=$(grep "^#[pP][oO][rR][tT]\s*" /etc/ssh/sshd_config)
-                if [ -n "$RESULT" ]; then
-                    sed -i "/^#[pP][oO][rR][tT]\s*/a Port 33022" /etc/ssh/sshd_config
-                else
-                    echo "Port 33022" >> /etc/ssh/sshd_config
+            if [ -f /data/.profile ]; then
+                sed -i '/^NOT_CHANGE_SSH_PORT/d' /data/.profile
+            fi
+            echo "export NOT_CHANGE_SSH_PORT=true" >>/data/.profile
+            if [ -n "$(command -v crontab)" ]; then
+                if ! crontab -l | grep -q "/data/.init/ssh_port.sh"; then
+                    (
+                        crontab -l 2>/dev/null
+                        echo "@reboot /data/.init/ssh_port.sh"
+                    ) | crontab -
                 fi
-                
             fi
         fi
-        # 重启SSH服务
-        info "Restart SSH Service"
-        if [ -n "$(command -v systemctl)" ]; then
-            if systemctl restart sshd; then
-                info "Remove SSH Config Backup"
-                rm -f /etc/ssh/sshd_config.bak >/dev/null
-            else
-                err "Modify SSH config Failed."
-                info "Restoring SSH Config..."
-                rm -f /etc/ssh/sshd_config >/dev/null
-                mv -f /etc/ssh/sshd_config.bak /etc/ssh/sshd_config >/dev/null
-            fi
-        else
-            service sshd restart
-            service ssh restart
-        fi
-        # 清理临时文件
-        [ -n "${PUBKeyFile}" ] && rm -rf "${PUBKeyFile}"
-    else
-        warn "Do not support none OpenSSH Server!"
     fi
+    /data/.init/ssh_key.sh
+    /data/.init/ssh_port.sh
     # 4.新增用户
     [ $INSTALL_MYSQL = true ] && /usr/sbin/useradd -u 1001 -s /sbin/nologin mysql 2>/dev/null
     /usr/sbin/useradd -u 1002 -s /sbin/nologin www 2>/dev/null
@@ -171,7 +153,6 @@ else
     # Nginx
     [ $INSTALL_NGINX = true ] && {
         if [ -f /data/.init/nginx.sh ]; then
-            chmod +x /data/.init/nginx.sh
             /data/.init/nginx.sh
         else
             bash -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/nginx.sh" -o -)"
@@ -186,22 +167,25 @@ if [ ! -f /root/.vimrc ]; then
 fi
 
 # 7.安装 ez-bash
-git clone "${MIRROR}https://github.com/benzBrake/.ez-bash" /data/.ez
-chmod +x /data/.ez/*.bash
-chmod +x /data/.ez/*/*.bash
+if [ ! -d /data/.ez ]; then
+    git clone "${MIRROR}https://github.com/benzBrake/.ez-bash" /data/.ez
+    chmod +x /data/.ez/*.bash
+    chmod +x /data/.ez/*/*.bash
+fi
 
-# 8.Utils 配置
+# 8.环境变量
 if grep "/data/.ezenv" /root/.bashrc >/dev/null; then
     info "Utils env is set."
 else
     info "Setting utils env."
     echo '. "/data/.ezenv"' >>/root/.bashrc
 fi
-chmod +x /data/.utils/* >/dev/null
 
 # 9.安装 Rclone
-mkdir /data/rclone
-curl https://rclone.org/install.sh | bash
+if [ ! -f /usr/bin/rclone ]; then
+    mkdir /data/rclone
+    curl https://rclone.org/install.sh | bash
+fi
 
 # 10.启用 BBR
 if sysctl net.ipv4.tcp_available_congestion_control | grep bbr; then
@@ -211,6 +195,9 @@ if sysctl net.ipv4.tcp_available_congestion_control | grep bbr; then
 fi
 
 # 11.安装 acme.sh
-sh /data/.init/acme.sh MIRROR="${MIRROR}" LET_MAIL="${LET_MAIL}"
+if [ ! -d /data/.acme.sh ]; then
+    curl https://get.acme.sh | sh
+    sh /data/.init/acme.sh MIRROR="${MIRROR}" LET_MAIL="${LET_MAIL}"
+fi
 
 suc "ALL Done"

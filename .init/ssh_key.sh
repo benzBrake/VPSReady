@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
-
+source /data/.profile
 if [ -z "${KEY_URL}" ]; then
-    KEY_URL="${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/pub/xiaoji.pub"
+    KEY_URL="${GH_MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/pub/xiaoji.pub"
 fi
 
 # Function to generate a random number
@@ -38,3 +38,6 @@ else
     }
     chmod 600 "$HOME/.ssh/authorized_keys" >/dev/null
 fi
+
+# 清理临时文件
+[ -n "${PUBKeyFile}" ] && rm -rf "${PUBKeyFile}"
