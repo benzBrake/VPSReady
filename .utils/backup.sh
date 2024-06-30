@@ -76,8 +76,8 @@ DELETE_REMOTE_FILE_FLG=false
 # Rclone remote name
 RCLONE_NAME="${BS_RCLONE_NAME}"
 
-# Rclone remote folder name (default "")
-RCLONE_FOLDER="/$(hostname)"
+# Rclone remote folder name (default `hostname`)
+RCLONE_FOLDER="${BS_RCLONE_FOLDER-/$(hostname)}"
 
 # Upload local file to FTP server flag (true: upload, false: not upload)
 FTP_FLG=false
