@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
-source /data/.profile
-source /data/.utils/common.sh
+if [ -f /data/.profile ]; then
+    source /data/.profile
+fi
 if [ -z "${KEY_URL}" ]; then
     KEY_URL="${GH_MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/pub/xiaoji.pub"
 fi
