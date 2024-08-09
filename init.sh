@@ -4,11 +4,10 @@ SCRIPT_DIR=$(
     cd "$(dirname "")"
     pwd
 )
-chmod +x "${SCRIPT_DIR}/.init/*.sh"
-chmod +x "${SCRIPT_DIR}/.utils/*"
+chmod +x "${SCRIPT_DIR}"/.init/*.sh
+chmod +x "${SCRIPT_DIR}"/.utils/*
 
-
-source "${SCRIPT_DIR}/.utils/common.sh"
+. "${SCRIPT_DIR}"/.utils/common.sh
 
 MIRROR=$(echo "${MIRROR}" | sed 's#/$##g')
 # 检查MIRROR是否为空
