@@ -64,10 +64,10 @@ fi
 info "Install required software"
 if [ -n "$(command -v apt-get)" ]; then
     apt-get update >/dev/null
-    apt-get -y install curl ca-certificates vim unzip ftp openssl bash crontab >/dev/null
+    apt-get -y install curl ca-certificates vim unzip ftp openssl bash crontab lrzsz >/dev/null
     [ "$INSTALL_MYSQL" = true ] && apt-get -y install default-mysql-client >/dev/null
 elif [ -n "$(command -v apk)" ]; then
-    apk add --update --no-cache curl ca-certificates vim lftp tzdata openssl bash crontab >/dev/null
+    apk add --update --no-cache curl ca-certificates vim lftp tzdata openssl bash crontab lrzsz >/dev/null
     [ "$INSTALL_MYSQL" = true ] && apk add --update --nocache mysql-client >/dev/null
 else
     err "Do not support your system!"
