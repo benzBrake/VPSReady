@@ -54,6 +54,9 @@ fi
 if [ "$TOTAL_RAM" -le 64 ]; then
     INSTALL_NGINX=false
 fi
+if [ "$NOT_INSTALL_DOCKER" = true ]; then
+    INSTALL_DOCKER=false
+fi
 # 如果已经安装了就跳过
 
 if pgrep dockerd >/dev/null 2>&1; then

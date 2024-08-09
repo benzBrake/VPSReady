@@ -81,6 +81,14 @@ chmod +x ./init.sh
 NOT_CHANGE_SSH_PORT=true ./init.sh
 ```
 
+### 如果不需要 Docker
+
+```shell
+NOT_INSTALL_DOCKER=true ./init.sh
+```
+
+
+
 ### 自定义 LET SSL 的邮箱
 
 ```shell
