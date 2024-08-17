@@ -87,8 +87,6 @@ NOT_CHANGE_SSH_PORT=true ./init.sh
 NOT_INSTALL_DOCKER=true ./init.sh
 ```
 
-
-
 ### 自定义 LET SSL 的邮箱
 
 ```shell
@@ -101,9 +99,17 @@ LET_MAIL=bbb@ccc.com ./init.sh
 NOT_CHANGE_SSH_PORT=true LET_MAIL=bbb@ccc.com ./init.sh
 ```
 
+### 使用 Github 镜像
+
+```shell
+MIRROR=https://ghmirror.pp.ua ./init.sh	
+```
+
 ## 其他 GitHub 镜像
 
 https://github.moeyy.xyz/
+
+<https://mirror.ghproxy.com/>
 
 ## 单独运行其中的初始化脚本
 
