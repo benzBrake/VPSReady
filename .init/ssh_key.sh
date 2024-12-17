@@ -23,6 +23,7 @@ shift $((OPTIND -1))
 if [ -f /data/.profile ]; then
     . /data/.profile
 fi
+
 if [ -z "${KEY_URL}" ]; then
     KEY_URL="${GH_MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/pub/xiaoji.pub"
 fi
@@ -70,9 +71,18 @@ fi
 
 chmod 600 "$HOME/.ssh/authorized_keys" >/dev/null
 
-# 禁止密码登录
+# 清理临时文件
+[ -n "${PUBKeyFile}" ] && rm -rf "${PUBKeyFile}"
+
+# Check if the script is run as root
+if [ "$EUID" -ne 0 ]; then
+  echo "Please run this script as root."
+  exit 1
+fi
+
+# Disable password login
 echo "Disable password login"
 sed -i 's/^PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
 
-# 清理临时文件
-[ -n "${PUBKeyFile}" ] && rm -rf "${PUBKeyFile}"
+# Restart the SSH service to apply the changes
+systemctl restart sshd
