@@ -59,7 +59,11 @@ MYSQL_ROOT_PASSWORD="${BS_MYSQL_PASSWORD-root}"
 
 # Below is a list of MySQL database name that will be backed up
 # If you want backup ALL databases, leave it blank.
-MYSQL_DATABASE_NAME[0]=""
+if [ -n "${BS_MYSQL_DATABASE_NAME}" ]; then
+    IFS=',' read -r -a MYSQL_DATABASE_NAME <<< "${BS_MYSQL_DATABASE_NAME}"
+else
+    MYSQL_DATABASE_NAME=()
+fi
 
 # Below is a list of files and directories that will be backed up in the tar backup
 # For example:
@@ -177,7 +181,7 @@ EOF
             log "MySQL root password is incorrect. Please check it and try again"
             exit 1
         fi
-        if [[ "${MYSQL_DATABASE_NAME[@]}" == "" ]]; then
+        if [ ${#MYSQL_DATABASE_NAME[@]} -eq 0 ]; then
             mysqldump -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" -u root -p"${MYSQL_ROOT_PASSWORD}" --all-databases > "${SQLFILE}" 2>/dev/null
             if [ $? -ne 0 ]; then
                 log "MySQL all databases backup failed"
