@@ -69,7 +69,12 @@ fi
 # For example:
 # File: /data/www/default/test.tgz
 # Directory: /data/www/default/test
-BACKUP[0]="${BS_BACKUP_DIR:-/data}"
+if [ -n "${BS_BACKUP_DIRS}" ]; then
+    IFS=',' read -r -a BACKUP <<< "${BS_BACKUP_DIRS}"
+else
+    # Default backup directories if environment variable is not set
+    BACKUP=("/data")
+fi
 
 # Number of days to store daily local backups (default 7 days)
 LOCALAGEDAILIES="${BS_LOCAL_HISTORY:-3}"
