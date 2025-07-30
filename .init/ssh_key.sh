@@ -83,6 +83,12 @@ fi
 # Disable password login
 echo "Disable password login"
 sed -i 's/^PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
+# Enable public key authentication
+echo "Enable public key authentication"
+sed -i.bak 's/^[#]\?[ ]*PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_configig
+# Change MaxAuthTries to 10
+echo "Change MaxAuthTries to 10"
+sed -i 's/^[#]\?[ ]*MaxAuthTries.*/MaxAuthTries 10/' /etc/ssh/sshd_config
 
 # Restart the SSH service to apply the changes
 systemctl restart sshd
