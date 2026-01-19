@@ -75,6 +75,12 @@ chmod +x ./init.sh
 ./init.sh
 ```
 
+### 自定义 SSH 公钥
+
+```shell
+SSHKEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC... your-key-comment" ./init.sh
+```
+
 ### 如果不需要修改 SSH 端口
 
 ```shell
@@ -96,7 +102,7 @@ LET_MAIL=bbb@ccc.com ./init.sh
 ### 多个参数
 
 ```shell
-NOT_CHANGE_SSH_PORT=true LET_MAIL=bbb@ccc.com ./init.sh
+NOT_CHANGE_SSH_PORT=true LET_MAIL=bbb@ccc.com SSHKEY="ssh-rsa AAAAB3NzaC1yc2E... your-key-comment" ./init.sh
 ```
 
 ### 使用 Github 镜像

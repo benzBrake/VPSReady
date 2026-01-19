@@ -112,6 +112,16 @@ else
             fi
         fi
     fi
+
+    # 处理 SSHKEY 环境变量，直接写入公钥内容
+    if [ -n "${SSHKEY}" ]; then
+        info "Setting custom SSH public key"
+        mkdir -p /data/pub
+        echo "${SSHKEY}" > /data/pub/xiaoji.pub
+        chmod 644 /data/pub/xiaoji.pub
+        suc "SSH public key saved to /data/pub/xiaoji.pub"
+    fi
+
     /data/.init/ssh_key.sh
     /data/.init/ssh_port.sh
     # 4.新增用户
