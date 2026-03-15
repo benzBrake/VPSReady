@@ -118,6 +118,62 @@ MIRROR=https://ghmirror.pp.ua ./init.sh
 NOT_CHANGE_SSH_PORT=true LET_MAIL=your@email.com SSHKEY="ssh-rsa AAAA..." ./init.sh
 ```
 
+### Docker 日志轮转配置
+
+脚本会自动为 Docker 配置日志轮转策略，防止容器日志无限增长占用磁盘空间。
+
+#### 环境变量
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `DOCKER_LOG_MAX_SIZE` | `10m` | 单个日志文件最大大小（如：`10m`, `50m`, `100m`） |
+| `DOCKER_LOG_MAX_FILE` | `3` | 保留的日志文件数量（如：`3`, `5`, `10`） |
+| `DOCKER_LOG_DRIVER` | `json-file` | 日志驱动类型 |
+| `DOCKER_DISABLE_LOG_CONFIG` | `false` | 设为 `true` 跳过日志配置 |
+
+#### 配置示例
+
+```bash
+# 自定义日志大小和文件数量
+DOCKER_LOG_MAX_SIZE=50m DOCKER_LOG_MAX_FILE=5 ./init.sh
+
+# 禁用自动日志配置
+DOCKER_DISABLE_LOG_CONFIG=true ./init.sh
+```
+
+#### 验证配置
+
+```bash
+# 查看配置文件
+cat /etc/docker/daemon.json
+
+# 应该看到类似输出：
+# {
+#   "log-driver": "json-file",
+#   "log-opts": {
+#     "max-size": "10m",
+#     "max-file": "3"
+#   }
+# }
+
+# 测试日志轮转
+docker run -d --name log-test nginx:alpine
+# 生成一些日志后检查
+docker logs log-test
+```
+
+#### 故障排查
+
+如果日志配置出现问题，可以手动恢复：
+
+```bash
+# 如果有备份文件
+sudo mv /etc/docker/daemon.json.bak /etc/docker/daemon.json
+
+# 重启 Docker
+sudo systemctl restart docker
+```
+
 ## 单独运行模块
 
 ### 安装 SSH 公钥
