@@ -1,0 +1,35 @@
+# Git
+.git/
+.gitignore
+
+# VPSReady 特定
+/.ez
+/.profile
+/acme.sh
+/docker-compose.yml
+/web
+
+# 文档
+*.md
+LICENSE
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# IDE 和编辑器
+.idea/
+.vscode/
+*.swp
+
+# 日志和临时文件
+*.log
+tmp/
+
+# MCP 插件缓存
+.playwright-mcp/
+
+# Claude 配置
+.claude/
+.claudeignore
+.geminiignore

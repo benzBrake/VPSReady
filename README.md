@@ -1,133 +1,166 @@
 # VPSReady
-VPS初始化脚本
-因为 CentOS 被切换到 Stream，估计以后写SHELL都不考虑RHEL系了。
 
-ℹ克隆脚本以后记得更换pub目录下的公钥
+VPS 自动化初始化脚本项目，用于快速配置新 VPS 环境。
 
-## 脚本功能说明
+## 项目概述
 
-1. 默认情况下会修改 SSH 端口为 33022，暂时不支持自定义端口
-2. 默认情况下会安装 curl ca-certificates vim unzip ftp openssl bash 等软件包
-3. 脚本会根据内存判断是否安装 Docker/Docker-Compose 和 MySQL 命令行客户端 (低于512MB不安装)
-4. 增加 MySQL 用户 (1001:1001)，WWW 用户 (1002:1002)
-5. 安装仓库内的 VIM 配置文件
-6. 安装 .ez-bash
-7. 安装 Rclone
-8. 自动启用 BBR
-9. 安装 acme.sh
+VPSReady 是一套用于 Debian/Ubuntu/Alpine Linux 的 VPS 初始化脚本集合。它会自动完成 SSH 安全配置、Docker 环境搭建、Nginx 安装、SSL 证书申请等常见 VPS 初始化任务，让新 VPS 快速投入使用。
 
-## 玩 VPS 前置
+### 核心功能
 
-如果是贪便宜购入了只有 IPv6 的小鸡（不包括有 IPv4 的 NAT），那么你是无法直接安装存储在 Github 上的脚本的，因为 Github 没有 IPv6 地址。
+- **SSH 安全配置**: 自动修改 SSH 端口、配置公钥认证
+- **Docker 环境**: 根据内存自动判断是否安装 Docker 和 Docker Compose
+- **Nginx 安装**: 自动安装并配置 Nginx
+- **SSL 证书**: 集成 acme.sh 自动申请 Let's Encrypt 证书
+- **BBR 优化**: 自动启用 TCP BBR 拥塞控制算法
+- **系统优化**: 安装常用工具包、创建系统用户、配置环境
 
-解决办法有两个一个是使用 NAT64 服务，另一个是使用 Clouflare 提供的 WARP
+<!-- AUTO:tech-stack -->
+## 技术栈
 
-### 使用 NAT64 服务
+| 层级 | 技术 | 版本 |
+|------|------|------|
+| 脚本语言 | POSIX Shell | - |
+| 支持系统 | Debian/Ubuntu/Alpine | - |
+| 容器化 | Docker | Latest |
+| Web 服务器 | Nginx | Latest |
+| SSL 工具 | acme.sh | Latest |
+| 同步工具 | Rclone | Latest |
+<!-- /AUTO:tech-stack -->
+
+<!-- AUTO:directory -->
+## 项目结构
 
 ```
-cp /etc/resolv.conf /etc/resolv.conf.bak
-rm -f /etc/resolv.conf
-vim /etc/resolv.conf
-
-nameserver 2001:67c:27e4:15::6411
-nameserver 2001:67c:27e4::64
-
-nameserver 2a03:7900:2:0:31:3:104:161
+VPSReady/
+├── .init/              # 初始化模块脚本
+│   ├── acme.sh        # ACME SSL 证书申请
+│   ├── docker.sh      # Docker 安装配置
+│   ├── nginx.sh       # Nginx 安装配置
+│   ├── ssh_key.sh     # SSH 公钥配置
+│   └── ssh_port.sh    # SSH 端口修改
+├── .utils/             # 工具函数库
+│   ├── backup.sh      # 备份工具
+│   └── common.sh      # 通用函数
+├── Dockerfiles/        # Docker 配置文件示例
+├── web/                # Web 配置示例
+├── pub/                # 公钥目录（需用户自行替换）
+├── init.sh             # 主初始化脚本入口
+├── .ezenv              # 环境变量配置
+└── .docker-compose.yml.demo  # Docker Compose 示例
 ```
+<!-- /AUTO:directory -->
 
-### 使用 WARP
+<!-- AUTO:quick-start -->
+## 快速开始
 
-自动配置 WARP WireGuard IPv4 网络（IPv4 出站流量走 WARP 网络）
+### 环境要求
 
-```shell
-MIRROR=https://ghmirror.pp.ua bash <(curl -fsSL https://ghmirror.pp.ua/https://github.com/benzBrake/warp.sh/raw/main/warp.sh) 4
-```
+- **操作系统**: Debian 9+, Ubuntu 18.04+, Alpine 3.x
+- **权限**: root 用户或 sudo 权限
+- **网络**: 可访问 GitHub（或使用镜像）
 
-> PS: 上边使用的 https://ghmirror.pp.ua 是一个 GitHub 镜像，你可以自行部署 https://github.com/benzBrake/gh-proxy/
+### 基础安装
 
-## 安装脚本
-
-### 安装 Git
-
-#### Debian/Ubuntu
-
-```shell
+```bash
+# 1. 安装 Git
+# Debian/Ubuntu
 apt-get update && apt-get -y install git
-```
-#### Alpine
 
-```shell
+# Alpine
 apk update && apk add git
-```
 
-### 克隆脚本
+# 2. 克隆项目
+git clone https://github.com/benzBrake/VPSReady /data/VPSReady
+cd /data/VPSReady
 
-```shell
-git clone https://github.com/benzBrake/VPSReady /data
-```
-
-## 使用
-
-### 初始化 VPS
-```shell
-cd /data
+# 3. 执行初始化
 chmod +x ./init.sh
 ./init.sh
 ```
+<!-- /AUTO:quick-start -->
+
+## 高级配置
 
 ### 自定义 SSH 公钥
 
-```shell
+```bash
 SSHKEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC... your-key-comment" ./init.sh
 ```
 
-### 如果不需要修改 SSH 端口
+### 不修改 SSH 端口
 
-```shell
+```bash
 NOT_CHANGE_SSH_PORT=true ./init.sh
 ```
 
-### 如果不需要 Docker
+### 不安装 Docker
 
-```shell
+```bash
 NOT_INSTALL_DOCKER=true ./init.sh
 ```
 
-### 自定义 LET SSL 的邮箱
+### 自定义 Let's Encrypt 邮箱
 
-```shell
-LET_MAIL=bbb@ccc.com ./init.sh
+```bash
+LET_MAIL=your@email.com ./init.sh
 ```
 
-### 多个参数
+### 使用 GitHub 镜像
 
-```shell
-NOT_CHANGE_SSH_PORT=true LET_MAIL=bbb@ccc.com SSHKEY="ssh-rsa AAAAB3NzaC1yc2E... your-key-comment" ./init.sh
+```bash
+MIRROR=https://ghmirror.pp.ua ./init.sh
 ```
 
-### 使用 Github 镜像
+### 多参数组合
 
-```shell
-MIRROR=https://ghmirror.pp.ua ./init.sh	
+```bash
+NOT_CHANGE_SSH_PORT=true LET_MAIL=your@email.com SSHKEY="ssh-rsa AAAA..." ./init.sh
 ```
 
-## 其他 GitHub 镜像
-
-https://github.moeyy.xyz/
-
-<https://mirror.ghproxy.com/>
-
-## 单独运行其中的初始化脚本
+## 单独运行模块
 
 ### 安装 SSH 公钥
 
-```
+```bash
 bash -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/ssh_key.sh" -o -)"
 ```
 
+### 其他模块
 
+所有独立脚本都在 `.init/` 目录下，可根据需要单独执行。
 
-## 其他 VPS 一键脚本
+## 玩 VPS 前置
 
-利用上边初始化 VPS 如有需要，也可以安装的脚本。
+### IPv6 Only VPS 解决方案
 
+如果使用只有 IPv6 的 VPS（无 IPv4 的 NAT），无法直接访问 GitHub：
+
+#### 方案 1: 使用 NAT64
+
+```bash
+cp /etc/resolv.conf /etc/resolv.conf.bak
+rm -f /etc/resolv.conf
+vim /etc/resolv.conf
+```
+
+添加以下内容：
+```
+nameserver 2001:67c:27e4:15::6411
+nameserver 2001:67c:27e4::64
+nameserver 2a03:7900:2:0:31:3:104:161
+```
+
+#### 方案 2: 使用 WARP
+
+```bash
+MIRROR=https://ghmirror.pp.ua bash <(curl -fsSL https://ghmirror.pp.ua/https://github.com/benzBrake/warp.sh/raw/main/warp.sh) 4
+```
+
+## 安全注意事项
+
+⚠️ **克隆后务必更换 `pub/` 目录下的公钥**
+
+## 许可证
+
+本项目采用开源许可证，详见 [LICENSE](./LICENSE) 文件。
