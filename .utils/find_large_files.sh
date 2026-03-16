@@ -1,13 +1,34 @@
-#!/bin/bash
+#!/usr/bin/env sh
 # find_large_files.sh - 查找指定目录下的大文件
 # 用法: source .utils/find_large_files.sh && find_large_files [目录] [大小阈值MB]
 
 # 自动加载 common.sh
-_SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# 尝试多种方式获取脚本目录，兼容 source 和直接执行
+_get_script_dir() {
+    _dir="${0%/*}"
+    if [ "${_dir}" = "${0}" ] || [ -z "${_dir}" ]; then
+        _dir="$(pwd)"
+    else
+        _dir="$(cd "${_dir}" && pwd)"
+    fi
+    printf '%s' "${_dir}"
+}
+
+_SCRIPT_DIR="$(_get_script_dir)"
+
+# 尝试加载 common.sh
 if [ -f "${_SCRIPT_DIR}/common.sh" ] && ! type info >/dev/null 2>&1; then
     . "${_SCRIPT_DIR}/common.sh"
 fi
-unset _SCRIPT_DIR
+
+# 如果上面加载失败，尝试从项目根目录加载
+if ! type info >/dev/null 2>&1; then
+    if [ -f "./.utils/common.sh" ]; then
+        . "./.utils/common.sh"
+    fi
+fi
+
+unset _get_script_dir _dir _SCRIPT_DIR
 
 find_large_files() {
     # 参数处理
