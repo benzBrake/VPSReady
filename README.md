@@ -176,6 +176,26 @@ sudo systemctl restart docker
 
 ## 单独运行模块
 
+### Docker 日志轮转配置
+
+独立配置 Docker 容器日志轮转，无需重新安装 Docker：
+
+```bash
+# 下载并运行脚本
+bash -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/docker-logs.sh" -o -)"
+
+# 或使用环境变量自定义配置
+DOCKER_LOG_MAX_SIZE=50m DOCKER_LOG_MAX_FILE=5 bash -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/docker-logs.sh" -o -)"
+```
+
+**环境变量：**
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `DOCKER_LOG_MAX_SIZE` | `10m` | 单个日志文件最大大小 |
+| `DOCKER_LOG_MAX_FILE` | `3` | 保留的日志文件数量 |
+| `DOCKER_LOG_DRIVER` | `json-file` | 日志驱动类型 |
+
 ### 安装 SSH 公钥
 
 ```bash
