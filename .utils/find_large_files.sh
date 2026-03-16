@@ -2,6 +2,13 @@
 # find_large_files.sh - 查找指定目录下的大文件
 # 用法: source .utils/find_large_files.sh && find_large_files [目录] [大小阈值MB]
 
+# 自动加载 common.sh
+_SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "${_SCRIPT_DIR}/common.sh" ] && ! type info >/dev/null 2>&1; then
+    . "${_SCRIPT_DIR}/common.sh"
+fi
+unset _SCRIPT_DIR
+
 find_large_files() {
     # 参数处理
     SEARCH_DIR="${1:-.}"
@@ -15,10 +22,20 @@ find_large_files() {
 
     info "正在搜索 ${SEARCH_DIR} 下大于 ${SIZE_MB}MB 的文件..."
 
+    # 将 MB 转换为 KB（find -size 只支持整数和 k/M/G 单位）
+    # 小于 1MB 的转换为 KB，大于等于 1MB 的使用 MB
+    SIZE_KB=$(awk "BEGIN {printf \"%d\", ${SIZE_MB} * 1024}")
+    if [ "${SIZE_KB}" -lt 1024 ]; then
+        SIZE_SPEC="+${SIZE_KB}k"
+    else
+        SIZE_MB_INT=$(awk "BEGIN {printf \"%d\", ${SIZE_MB}}")
+        SIZE_SPEC="+${SIZE_MB_INT}M"
+    fi
+
     # 查找大文件并格式化输出
     find "${SEARCH_DIR}" \
         -type f \
-        -size "+${SIZE_MB}M" \
+        -size "${SIZE_SPEC}" \
         -exec du -sh {} \; \
         2>/dev/null | \
         sort -rh | \
@@ -35,6 +52,9 @@ find_large_files() {
             $1 = ""
             path = substr($0, 2)
 
+            # 保存原始大小用于显示
+            size_display = size_str
+
             # 转换大小为MB
             if (size_str ~ /G$/) {
                 gsub(/G/, "", size_str)
@@ -49,7 +69,7 @@ find_large_files() {
                 size_mb = size_str / 1024 / 1024
             }
 
-            printf "%-12s %s\n", size_str, path
+            printf "%-12s %s\n", size_display, path
             count++
             total += size_mb
         }
