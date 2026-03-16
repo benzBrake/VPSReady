@@ -43,9 +43,18 @@ while :; do
     PUBKeyFile="/tmp/$(randomNum).pub"
 done
 
-# 有本地用本地（Git clone 项目的时候本地有 key），没有就从 Mirror 下载
-if [ -f /data/pub/xiaoji.pub ]; then
-    echo "Local public key found, using it..."
+# 获取脚本所在目录的绝对路径
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# 获取项目根目录（脚本目录的上级目录）
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+PROJECT_KEY_FILE="${PROJECT_ROOT}/pub/xiaoji.pub"
+
+# 优先级：项目目录 > /data挂载 > 网络下载
+if [ -f "${PROJECT_KEY_FILE}" ]; then
+    echo "Using project public key..."
+    cp "${PROJECT_KEY_FILE}" "${PUBKeyFile}" >/dev/null
+elif [ -f /data/pub/xiaoji.pub ]; then
+    echo "Using mounted public key..."
     cp /data/pub/xiaoji.pub "${PUBKeyFile}" >/dev/null
 else
     echo "Downloading public key from mirror..."
