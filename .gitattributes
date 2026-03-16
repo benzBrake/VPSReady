@@ -1,4 +1,5 @@
-# Shell scripts - set executable bit and ensure LF line endings
+# Shell scripts - ensure LF line endings
+# 注意：可执行权限由 .git/hooks/pre-commit hook 自动管理
 *.sh eol=lf
 
 # Ensure consistent line endings for text files

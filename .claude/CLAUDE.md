@@ -57,7 +57,28 @@ VPSReady/
 - Ubuntu 20.04/22.04
 - Alpine 3.x
 
-## 提交规范
+## Git 工作流
+
+### .sh 文件权限管理
+**重要**：所有 .sh 脚本文件必须具有可执行权限（100755）。
+
+**使用 Claude 提交时**：
+- 项目已配置 `.git/hooks/pre-commit` hook
+- 该 hook 会自动为新增/修改的 .sh 文件添加可执行权限
+- 直接执行 `/zcf:git-commit` 即可，无需手动处理权限
+
+**手动提交时**：
+```bash
+# 为单个文件添加权限
+chmod +x path/to/script.sh
+git update-index --chmod=+x path/to/script.sh
+
+# 批量为所有 .sh 文件添加权限
+find . -name "*.sh" -exec chmod +x {} \;
+find . -name "*.sh" -exec git update-index --chmod=+x {} \;
+```
+
+### 提交规范
 - feat: 新功能
 - fix: 修复
 - docs: 文档更新
