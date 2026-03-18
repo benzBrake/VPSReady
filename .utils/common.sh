@@ -3,14 +3,14 @@ randomNum() {
     awk -v min=10000 -v max=99999 'BEGIN{srand(); print int(min+rand()*(max-min+1))}'
 }
 info() {
-    echo "[I] $*"
+    echo "[I] $*" >&2
 }
 warn() {
-    echo "[W] $*"
+    echo "[W] $*" >&2
 }
 err() {
-    echo "[E] $*"
+    echo "[E] $*" >&2
 }
 suc() {
-    echo "[S] $*"
+    echo "[S] $*" >&2
 }
