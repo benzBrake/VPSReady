@@ -9,10 +9,10 @@ if [ -f "${SCRIPT_DIR}/../.utils/common.sh" ]; then
     . "${SCRIPT_DIR}/../.utils/common.sh"
 else
     # 如果 common.sh 不可用，定义基本日志函数
-    info() { echo "[I] $*"; }
-    warn() { echo "[W] $*"; }
-    err() { echo "[E] $*"; }
-    suc() { echo "[S] $*"; }
+    info() { echo "[I] $*" >&2; }
+    warn() { echo "[W] $*" >&2; }
+    err() { echo "[E] $*" >&2; }
+    suc() { echo "[S] $*" >&2; }
 fi
 
 # ====================================
