@@ -110,8 +110,8 @@ build_download_url() {
     fi
 
     # 自动构建 URL
-    # 格式: https://github.com/lxhao61/integrated-examples/releases/download/v{version}/caddy_{os}_{arch}
-    DOWNLOAD_URL="https://github.com/${CADDY_REPO}/releases/download/${CADDY_VERSION}/caddy_${CADDY_OS}_${ARCH}"
+    # 格式: https://github.com/lxhao61/integrated-examples/releases/download/{version}/caddy-{os}-{arch}.tar.gz
+    DOWNLOAD_URL="https://github.com/${CADDY_REPO}/releases/download/${CADDY_VERSION}/caddy-${CADDY_OS}-${ARCH}.tar.gz"
 
     # 验证 URL 是否可访问
     if ! curl -fsSL -I "${DOWNLOAD_URL}" >/dev/null 2>&1; then
@@ -138,16 +138,34 @@ download_caddy() {
 
     TEMP_DIR=$(mktemp -d)
     CADDY_TEMP="${TEMP_DIR}/caddy"
+    DOWNLOAD_TEMP="${TEMP_DIR}/caddy.tar.gz"
 
-    if ! curl -fsSL "${DOWNLOAD_URL}" -o "${CADDY_TEMP}"; then
+    if ! curl -fsSL "${DOWNLOAD_URL}" -o "${DOWNLOAD_TEMP}"; then
         err "Failed to download Caddy"
         rm -rf "${TEMP_DIR}"
         return 1
     fi
 
     # 验证下载的文件
-    if [ ! -f "${CADDY_TEMP}" ] || [ ! -s "${CADDY_TEMP}" ]; then
+    if [ ! -f "${DOWNLOAD_TEMP}" ] || [ ! -s "${DOWNLOAD_TEMP}" ]; then
         err "Downloaded file is empty or not found"
+        rm -rf "${TEMP_DIR}"
+        return 1
+    fi
+
+    # 解压 tar.gz 文件
+    if ! tar -xzf "${DOWNLOAD_TEMP}" -C "${TEMP_DIR}" 2>/dev/null; then
+        err "Failed to extract Caddy from archive"
+        rm -rf "${TEMP_DIR}"
+        return 1
+    fi
+
+    # 清理下载的压缩包
+    rm -f "${DOWNLOAD_TEMP}"
+
+    # 验证解压后的二进制文件
+    if [ ! -f "${CADDY_TEMP}" ] || [ ! -s "${CADDY_TEMP}" ]; then
+        err "Extracted caddy binary not found"
         rm -rf "${TEMP_DIR}"
         return 1
     fi
