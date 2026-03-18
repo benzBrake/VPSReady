@@ -22,6 +22,7 @@ CADDY_REPO="${CADDY_REPO:-lxhao61/integrated-examples}"
 CADDY_INSTALL_DIR="${CADDY_INSTALL_DIR:-/usr/local/bin}"
 CADDY_CONFIG_DIR="${CADDY_CONFIG_DIR:-/etc/caddy}"
 CADDY_DATA_DIR="${CADDY_DATA_DIR:-/data/caddy}"
+CADDY_CONFIG_TYPE="${CADDY_CONFIG_TYPE:-caddyfile}"
 DOWNLOAD_URL="${DOWNLOAD_URL:-}"
 ARCH="${ARCH:-}"
 CADDY_OS="${CADDY_OS:-}"
@@ -234,15 +235,43 @@ create_config_dirs() {
         }
     fi
 
-    # 创建 Caddyfile 示例（如果不存在）
-    if [ ! -f "${CADDY_CONFIG_DIR}/Caddyfile" ] && [ -d "${CADDY_CONFIG_DIR}" ]; then
-        cat > "${CADDY_CONFIG_DIR}/Caddyfile" <<'EOF'
+    # 根据配置类型创建示例配置
+    case "${CADDY_CONFIG_TYPE}" in
+        json)
+            if [ ! -f "${CADDY_CONFIG_DIR}/caddy.json" ] && [ -d "${CADDY_CONFIG_DIR}" ]; then
+                cat > "${CADDY_CONFIG_DIR}/caddy.json" <<'EOF'
+{
+  "apps": {
+    "http": {
+      "servers": {
+        "srv0": {
+          "listen": [":80"],
+          "routes": [{
+            "handle": [{
+              "handler": "static_response",
+              "body": "Hello, World!"
+            }]
+          }]
+        }
+      }
+    }
+  }
+}
+EOF
+                info "Created sample caddy.json at ${CADDY_CONFIG_DIR}/caddy.json"
+            fi
+            ;;
+        caddyfile|*)
+            if [ ! -f "${CADDY_CONFIG_DIR}/Caddyfile" ] && [ -d "${CADDY_CONFIG_DIR}" ]; then
+                cat > "${CADDY_CONFIG_DIR}/Caddyfile" <<'EOF'
 :80 {
     respond "Hello, World!"
 }
 EOF
-        info "Created sample Caddyfile at ${CADDY_CONFIG_DIR}/Caddyfile"
-    fi
+                info "Created sample Caddyfile at ${CADDY_CONFIG_DIR}/Caddyfile"
+            fi
+            ;;
+    esac
 
     suc "Caddy directories ready"
     return 0
@@ -260,6 +289,16 @@ create_systemd_service() {
 
     info "Creating Caddy systemd service..."
 
+    # 根据配置类型确定配置文件
+    case "${CADDY_CONFIG_TYPE}" in
+        json)
+            CONFIG_FILE="${CADDY_CONFIG_DIR}/caddy.json"
+            ;;
+        *)
+            CONFIG_FILE="${CADDY_CONFIG_DIR}/Caddyfile"
+            ;;
+    esac
+
     cat > /etc/systemd/system/caddy.service <<EOF
 [Unit]
 Description=Caddy Web Server
@@ -271,8 +310,8 @@ Requires=network-online.target
 Type=notify
 User=root
 Group=root
-ExecStart=${CADDY_INSTALL_DIR}/caddy run --environ --config ${CADDY_CONFIG_DIR}/Caddyfile
-ExecReload=${CADDY_INSTALL_DIR}/caddy reload --config ${CADDY_CONFIG_DIR}/Caddyfile --force
+ExecStart=${CADDY_INSTALL_DIR}/caddy run --environ --config ${CONFIG_FILE}
+ExecReload=${CADDY_INSTALL_DIR}/caddy reload --config ${CONFIG_FILE} --force
 TimeoutStopSec=5s
 LimitNOFILE=1048576
 LimitNPROC=1048576
@@ -301,13 +340,23 @@ create_openrc_service() {
 
     info "Creating Caddy OpenRC service..."
 
+    # 根据配置类型确定配置文件
+    case "${CADDY_CONFIG_TYPE}" in
+        json)
+            CONFIG_FILE="${CADDY_CONFIG_DIR}/caddy.json"
+            ;;
+        *)
+            CONFIG_FILE="${CADDY_CONFIG_DIR}/Caddyfile"
+            ;;
+    esac
+
     cat > /etc/init.d/caddy <<EOF
 #!/sbin/openrc-run
 
 name="caddy"
 description="Caddy Web Server"
 command="${CADDY_INSTALL_DIR}/caddy"
-command_args="run --environ --config ${CADDY_CONFIG_DIR}/Caddyfile"
+command_args="run --environ --config ${CONFIG_FILE}"
 command_background=true
 pidfile="/run/\${RC_SVCNAME}.pid"
 output_log="/var/log/caddy.log"
@@ -396,6 +445,7 @@ main() {
     verify_installation
 
     info "Caddy installation completed"
+    info "Configuration type: ${CADDY_CONFIG_TYPE}"
     info "Configuration directory: ${CADDY_CONFIG_DIR}"
     info "Start service: systemctl start caddy (systemd) or rc-service caddy start (OpenRC)"
 
