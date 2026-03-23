@@ -49,8 +49,11 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PROJECT_KEY_FILE="${PROJECT_ROOT}/pub/xiaoji.pub"
 
-# 优先级：项目目录 > /data挂载 > 网络下载
-if [ -f "${PROJECT_KEY_FILE}" ]; then
+# 优先级：环境变量 > 项目目录 > /data挂载 > 网络下载
+if [ -n "${SSHKEY}" ]; then
+    echo "Using SSH public key from environment..."
+    printf '%s\n' "${SSHKEY}" > "${PUBKeyFile}"
+elif [ -f "${PROJECT_KEY_FILE}" ]; then
     echo "Using project public key..."
     cp "${PROJECT_KEY_FILE}" "${PUBKeyFile}" >/dev/null
 elif [ -f /data/pub/xiaoji.pub ]; then

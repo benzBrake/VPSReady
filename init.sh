@@ -113,13 +113,9 @@ else
         fi
     fi
 
-    # 处理 SSHKEY 环境变量，直接写入公钥内容
+    # 处理 SSHKEY 环境变量，仅用于当前初始化，避免覆盖现有公钥文件
     if [ -n "${SSHKEY}" ]; then
-        info "Setting custom SSH public key"
-        mkdir -p /data/pub
-        echo "${SSHKEY}" > /data/pub/xiaoji.pub
-        chmod 644 /data/pub/xiaoji.pub
-        suc "SSH public key saved to /data/pub/xiaoji.pub"
+        info "Using SSH public key from environment for this run"
     fi
 
     /data/.init/ssh_key.sh
