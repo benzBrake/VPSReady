@@ -98,9 +98,9 @@ sed -i 's/^PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_
 # Enable public key authentication
 echo "Enable public key authentication"
 sed -i.bak 's/^[#]\?[ ]*PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
-# Change MaxAuthTries to 10
+# Change MaxAuthTries to 20
 echo "Change maxAuthTries"
-sed -i 's/^[#]\?[ ]*MaxAuthTries.*/MaxAuthTries 10/' /etc/ssh/sshd_config
+sed -i 's/^[#]\?[ ]*MaxAuthTries.*/MaxAuthTries 20/' /etc/ssh/sshd_config
 
 # Restart the SSH service to apply the changes
 if [ -n "$(command -v systemctl)" ]; then
