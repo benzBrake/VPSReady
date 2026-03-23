@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 randomNum() {
     awk -v min=10000 -v max=99999 'BEGIN{srand(); print int(min+rand()*(max-min+1))}'
 }

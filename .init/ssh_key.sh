@@ -103,4 +103,12 @@ echo "Change maxAuthTries"
 sed -i 's/^[#]\?[ ]*MaxAuthTries.*/MaxAuthTries 10/' /etc/ssh/sshd_config
 
 # Restart the SSH service to apply the changes
-systemctl restart sshd
+if [ -n "$(command -v systemctl)" ]; then
+    systemctl restart sshd
+elif [ -n "$(command -v rc-service)" ]; then
+    # Alpine Linux (OpenRC)
+    rc-service sshd restart
+else
+    service sshd restart
+    service ssh restart
+fi

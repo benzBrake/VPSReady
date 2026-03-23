@@ -22,6 +22,14 @@
 # Auto transfer backup file to FTP server (option)
 # Auto delete Google Drive's or FTP server's remote file (option)
 
+# Check if running on Alpine Linux
+if [ -f /etc/alpine-release ]; then
+    echo "Error: This backup script is not supported on Alpine Linux."
+    echo "Alpine systems typically have limited disk space and are not suitable for backup servers."
+    echo "Please use this script on Debian/Ubuntu systems with adequate storage."
+    exit 1
+fi
+
 [[ $EUID -ne 0 ]] && echo "Error: This script must be run as root!" && exit 1
 if [ -f "/data/.ezenv" ]; then
     . "/data/.ezenv"

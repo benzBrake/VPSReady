@@ -1,6 +1,6 @@
-#!/bin/bash
-source /data/.profile
-source /data/.utils/common.sh
+#!/usr/bin/env sh
+. /data/.profile
+. /data/.utils/common.sh
 if [ -e "/etc/ssh/sshd_config" ]; then
     # 备份SSH配置
     info "Backup SSH config"
@@ -41,6 +41,17 @@ if [ -e "/etc/ssh/sshd_config" ]; then
     info "Restart SSH Service"
     if [ -n "$(command -v systemctl)" ]; then
         if systemctl restart sshd; then
+            info "Remove SSH Config Backup"
+            rm -f /etc/ssh/sshd_config.bak >/dev/null
+        else
+            err "Modify SSH config Failed."
+            info "Restoring SSH Config..."
+            rm -f /etc/ssh/sshd_config >/dev/null
+            mv -f /etc/ssh/sshd_config.bak /etc/ssh/sshd_config >/dev/null
+        fi
+    elif [ -n "$(command -v rc-service)" ]; then
+        # Alpine Linux (OpenRC)
+        if rc-service sshd restart; then
             info "Remove SSH Config Backup"
             rm -f /etc/ssh/sshd_config.bak >/dev/null
         else

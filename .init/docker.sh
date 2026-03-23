@@ -332,8 +332,14 @@ bash -c "$(curl -fsSL https://get.docker.com -o -)"
 # 2. 安装 docker-compose（如果需要）
 if [ -z "${NOT_INSTALL_DOCKER_COMPOSE}" ]; then
     info "Installing docker-compose..."
-    apt-get update
-    apt-get -y install docker-compose
+    if [ -n "$(command -v apt-get)" ]; then
+        apt-get update
+        apt-get -y install docker-compose
+    elif [ -n "$(command -v apk)" ]; then
+        apk add --update --no-cache docker-compose
+    else
+        warn "Unsupported package manager, skipping docker-compose installation"
+    fi
 fi
 
 # 3. 配置 Docker 日志轮转（如果未禁用）

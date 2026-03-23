@@ -66,14 +66,32 @@ fi
 info "Install required software"
 if [ -n "$(command -v apt-get)" ]; then
     apt-get update >/dev/null
-    apt-get -y install curl ca-certificates vim unzip ftp openssl bash crontab lrzsz vim >/dev/null
+    apt-get -y install curl ca-certificates vim unzip ftp openssl bash crontab lrzsz >/dev/null
     [ "$INSTALL_MYSQL" = true ] && apt-get -y install default-mysql-client >/dev/null
 elif [ -n "$(command -v apk)" ]; then
-    apk add --update --no-cache curl ca-certificates vim lftp tzdata openssl bash crontab lrzsz vim >/dev/null
-    [ "$INSTALL_MYSQL" = true ] && apk add --update --nocache mysql-client >/dev/null
+    apk add --update --no-cache curl ca-certificates vim lftp tzdata openssl bash dcron >/dev/null
+    [ "$INSTALL_MYSQL" = true ] && apk add --update --no-cache mysql-client >/dev/null
 else
     err "Do not support your system!"
     exit 1
+fi
+
+# Alpine 特殊处理：切换默认 shell 为 bash
+if [ -n "$(command -v apk)" ]; then
+    info "Setting bash as default shell for Alpine"
+    if [ -f /bin/bash ]; then
+        # 使用 chsh 切换当前用户的 shell
+        if command -v chsh >/dev/null 2>&1; then
+            chsh -s /bin/bash >/dev/null 2>&1
+        fi
+        # 确保 bash 在 /etc/shells 中
+        if ! grep -q "/bin/bash" /etc/shells 2>/dev/null; then
+            echo "/bin/bash" >> /etc/shells
+        fi
+        suc "Default shell changed to bash"
+    else
+        warn "Bash not found, skipping shell change"
+    fi
 fi
 
 # 2.设置时区
@@ -132,8 +150,17 @@ else
         else
             bash -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/docker.sh" -o -)"
         fi
-        systemctl enable docker
-        systemctl start docker
+        # 启动 Docker 服务
+        if [ -n "$(command -v systemctl)" ]; then
+            systemctl enable docker
+            systemctl start docker
+        elif [ -n "$(command -v rc-service)" ]; then
+            # Alpine Linux (OpenRC)
+            rc-update add docker boot
+            rc-service docker start
+        elif [ -n "$(command -v service)" ]; then
+            service docker start
+        fi
     else
         info "Skip install Docker"
     fi
