@@ -71,8 +71,8 @@ apt-get update && apt-get -y install git
 apk update && apk add git
 
 # 2. 克隆项目
-git clone https://github.com/benzBrake/VPSReady /data/VPSReady
-cd /data/VPSReady
+git clone https://github.com/benzBrake/VPSReady /data
+cd /data
 
 # 3. 执行初始化
 chmod +x ./init.sh
