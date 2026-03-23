@@ -204,9 +204,11 @@ else
 fi
 
 # 9.安装 Rclone
-if [ ! -f /usr/bin/rclone ]; then
+if [ -z "$(command -v rclone)" ]; then
     mkdir /data/rclone
     curl https://rclone.org/install.sh | bash
+else
+    info "Rclone already installed, skip"
 fi
 
 # 10.启用 BBR
