@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
-. /data/.profile
-. /data/.utils/common.sh
+[ -f "/data/.profile" ] && . /data/.profile
+[ -f "/data/.utils/common.sh" ] && . /data/.utils/common.sh
 if [ -e "/etc/ssh/sshd_config" ]; then
     # 备份SSH配置
     info "Backup SSH config"
