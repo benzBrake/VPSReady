@@ -191,13 +191,22 @@ restart_docker_service() {
 
     # 尝试使用 systemctl
     if command -v systemctl >/dev/null 2>&1; then
-        if systemctl restart docker; then
-            suc "Docker service restarted (systemctl)"
-            return 0
-        else
-            err "Failed to restart Docker with systemctl"
-            return 1
+        if systemctl list-unit-files docker.service >/dev/null 2>&1 || systemctl status docker >/dev/null 2>&1; then
+            if systemctl restart docker; then
+                suc "Docker service restarted (systemctl docker)"
+                return 0
+            fi
         fi
+
+        if systemctl list-unit-files docker.service >/dev/null 2>&1; then
+            if systemctl restart docker.service; then
+                suc "Docker service restarted (systemctl docker.service)"
+                return 0
+            fi
+        fi
+
+        err "Failed to restart Docker with systemctl"
+        return 1
     fi
 
     # 尝试使用 service
@@ -331,14 +340,15 @@ bash -c "$(curl -fsSL https://get.docker.com -o -)"
 
 # 2. 安装 docker-compose（如果需要）
 if [ -z "${NOT_INSTALL_DOCKER_COMPOSE}" ]; then
-    info "Installing docker-compose..."
-    if [ -n "$(command -v apt-get)" ]; then
-        apt-get update
-        apt-get -y install docker-compose
+    info "Checking Docker Compose availability..."
+    if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+        suc "Docker Compose already available via docker compose"
     elif [ -n "$(command -v apk)" ]; then
+        info "Installing docker-compose..."
         apk add --update --no-cache docker-compose
     else
-        warn "Unsupported package manager, skipping docker-compose installation"
+        warn "docker compose is unavailable after Docker installation"
+        warn "Skipping separate docker-compose package install to avoid conflicts with Docker official packages"
     fi
 fi
 
