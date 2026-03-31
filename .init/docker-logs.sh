@@ -202,13 +202,22 @@ restart_docker_service() {
 
     # 尝试使用 systemctl
     if command -v systemctl >/dev/null 2>&1; then
-        if systemctl restart docker; then
-            suc "Docker service restarted (systemctl)"
-            return 0
-        else
-            err "Failed to restart Docker with systemctl"
-            return 1
+        if systemctl list-unit-files docker.service >/dev/null 2>&1 || systemctl status docker >/dev/null 2>&1; then
+            if systemctl restart docker; then
+                suc "Docker service restarted (systemctl docker)"
+                return 0
+            fi
         fi
+
+        if systemctl list-unit-files docker.service >/dev/null 2>&1; then
+            if systemctl restart docker.service; then
+                suc "Docker service restarted (systemctl docker.service)"
+                return 0
+            fi
+        fi
+
+        err "Failed to restart Docker with systemctl"
+        return 1
     fi
 
     # 尝试使用 service
