@@ -9,6 +9,34 @@ chmod +x "${SCRIPT_DIR}"/.utils/*
 
 . "${SCRIPT_DIR}"/.utils/common.sh
 
+install_packages_separately() {
+    package_manager="$1"
+    shift
+    failed_packages=""
+
+    for package in "$@"; do
+        if [ "$package_manager" = "apt" ]; then
+            if apt-get -y install "$package" >/dev/null 2>&1; then
+                :
+            else
+                warn "Failed to install package: ${package}"
+                failed_packages="${failed_packages}${failed_packages:+ }${package}"
+            fi
+        elif [ "$package_manager" = "apk" ]; then
+            if apk add --update --no-cache "$package" >/dev/null 2>&1; then
+                :
+            else
+                warn "Failed to install package: ${package}"
+                failed_packages="${failed_packages}${failed_packages:+ }${package}"
+            fi
+        fi
+    done
+
+    if [ -n "$failed_packages" ]; then
+        warn "Skipped failed packages: ${failed_packages}"
+    fi
+}
+
 MIRROR=$(echo "${MIRROR}" | sed 's#/$##g')
 # 检查MIRROR是否为空
 if [ -n "${MIRROR}" ]; then
@@ -66,11 +94,11 @@ fi
 info "Install required software"
 if [ -n "$(command -v apt-get)" ]; then
     apt-get update >/dev/null
-    apt-get -y install curl ca-certificates vim unzip ftp openssl bash crontab lrzsz iproute2 >/dev/null
-    [ "$INSTALL_MYSQL" = true ] && apt-get -y install default-mysql-client >/dev/null
+    install_packages_separately apt curl ca-certificates vim unzip ftp openssl bash crontab lrzsz iproute2
+    [ "$INSTALL_MYSQL" = true ] && install_packages_separately apt default-mysql-client
 elif [ -n "$(command -v apk)" ]; then
-    apk add --update --no-cache curl ca-certificates vim unzip lftp tzdata openssl bash dcron iproute2-ss >/dev/null
-    [ "$INSTALL_MYSQL" = true ] && apk add --update --no-cache mysql-client >/dev/null
+    install_packages_separately apk curl ca-certificates vim unzip lftp tzdata openssl bash dcron iproute2-ss
+    [ "$INSTALL_MYSQL" = true ] && install_packages_separately apk mysql-client
 else
     err "Do not support your system!"
     exit 1
