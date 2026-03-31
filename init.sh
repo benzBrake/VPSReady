@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
 SCRIPT_DIR=$(
-    cd "$(dirname "")"
+    cd "$(dirname "$0")"
     pwd
 )
 chmod +x "${SCRIPT_DIR}"/.init/*.sh
@@ -94,7 +94,7 @@ fi
 info "Install required software"
 if [ -n "$(command -v apt-get)" ]; then
     apt-get update >/dev/null
-    install_packages_separately apt curl ca-certificates vim unzip ftp openssl bash crontab lrzsz iproute2
+    install_packages_separately apt curl ca-certificates vim unzip ftp openssl bash cron lrzsz iproute2
     [ "$INSTALL_MYSQL" = true ] && install_packages_separately apt default-mysql-client
 elif [ -n "$(command -v apk)" ]; then
     install_packages_separately apk curl ca-certificates vim unzip lftp tzdata openssl bash dcron iproute2-ss
@@ -164,7 +164,6 @@ else
         info "Using SSH public key from environment for this run"
     fi
 
-    /data/.init/ssh_key.sh
     /data/.init/ssh_port.sh
     # 4.新增用户
     [ $INSTALL_MYSQL = true ] && /usr/sbin/useradd -u 1001 -s /sbin/nologin mysql 2>/dev/null
@@ -242,7 +241,7 @@ fi
 # 10.启用 BBR
 if sysctl net.ipv4.tcp_available_congestion_control | grep bbr; then
     echo "net.core.default_qdisc=fq" >>/etc/sysctl.conf
-    echo "net.ipv4.tcp_congestion_control=bbr" >>/etc/sysctl.con
+    echo "net.ipv4.tcp_congestion_control=bbr" >>/etc/sysctl.conf
     sysctl -p
 fi
 

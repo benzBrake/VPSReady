@@ -87,7 +87,7 @@ chmod 600 "$HOME/.ssh/authorized_keys" >/dev/null
 [ -n "${PUBKeyFile}" ] && rm -rf "${PUBKeyFile}"
 
 # Check if the script is run as root
-if [ "$EUID" -ne 0 ]; then
+if [ "$(id -u)" -ne 0 ]; then
   echo "Please run this script as root."
   exit 1
 fi
