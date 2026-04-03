@@ -370,3 +370,14 @@ if [ "${DOCKER_DISABLE_LOG_CONFIG}" != "true" ]; then
 else
     info "Docker log configuration disabled by DOCKER_DISABLE_LOG_CONFIG"
 fi
+
+# 4. 配置 Docker 端口白名单（如果脚本存在）
+if command -v docker >/dev/null 2>&1; then
+    if [ -f "${SCRIPT_DIR}/docker_config_iptables.sh" ]; then
+        if "${SCRIPT_DIR}/docker_config_iptables.sh"; then
+            suc "Docker port whitelist configuration completed"
+        else
+            warn "Docker installed but port whitelist configuration failed, continuing anyway..."
+        fi
+    fi
+fi
