@@ -56,6 +56,84 @@ set -eu
 CONFIG="/etc/docker-port-whitelist.conf"
 CHAIN="DOCKER-PORT-WHITELIST"
 
+# ====================================
+# 验证函数
+# ====================================
+
+# 验证 IPv4 地址格式
+validate_ipv4() {
+    addr="$1"
+
+    # 检查 CIDR 格式
+    case "$addr" in
+        */*)
+            prefix="${addr#*/}"
+            ip_part="${addr%/*}"
+            # 前缀必须是 0-32 的数字
+            case "$prefix" in
+                ''|*[!0-9]*) return 1 ;;
+                *) [ "$prefix" -le 32 ] 2>/dev/null || return 1 ;;
+            esac
+            addr="$ip_part"
+            ;;
+    esac
+
+    # 验证 IPv4 格式 (x.x.x.x)
+    echo "$addr" | awk -F. '{
+        if (NF != 4) exit 1
+        for (i = 1; i <= 4; i++) {
+            if ($i < 0 || $i > 255) exit 1
+            if ($i ~ /^0/ && length($i) > 1) exit 1
+        }
+    }'
+}
+
+# 验证 IPv6 地址格式
+validate_ipv6() {
+    addr="$1"
+
+    # 检查 CIDR 格式
+    case "$addr" in
+        */*)
+            prefix="${addr#*/}"
+            ip_part="${addr%/*}"
+            # 前缀必须是 0-128 的数字
+            case "$prefix" in
+                ''|*[!0-9]*) return 1 ;;
+                *) [ "$prefix" -le 128 ] 2>/dev/null || return 1 ;;
+            esac
+            addr="$ip_part"
+            ;;
+    esac
+
+    # 简单验证：必须包含冒号且为十六进制
+    echo "$addr" | grep -qE '^[0-9a-fA-F:]+$'
+}
+
+# 验证端口号
+validate_port() {
+    port="$1"
+
+    case "$port" in
+        ''|*[!0-9]*) return 1 ;;
+        *) [ "$port" -ge 1 ] 2>/dev/null && [ "$port" -le 65535 ] ;;
+    esac
+}
+
+# 验证协议类型
+validate_proto() {
+    proto="$1"
+
+    case "$proto" in
+        tcp|udp|icmp) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+# ====================================
+# 链管理
+# ====================================
+
 ensure_chain() {
     cmd="$1"
 
@@ -71,10 +149,15 @@ ensure_chain() {
     fi
 }
 
+# ====================================
+# 规则应用
+# ====================================
+
 apply_family() {
     family="$1"
     cmd="$2"
     managed=""
+    line_num=0
 
     if ! command -v "$cmd" >/dev/null 2>&1; then
         return 0
@@ -85,21 +168,52 @@ apply_family() {
 
     if [ -f "$CONFIG" ]; then
         while IFS=' ' read -r rule_family source port proto extra; do
+            line_num=$((line_num + 1))
+
+            # 跳过空行和注释
             case "${rule_family:-}" in
                 ''|'#'*) continue ;;
             esac
 
+            # 跳过缺少必要字段的行
             [ -n "${source:-}" ] || continue
             [ -n "${port:-}" ] || continue
             [ -z "${extra:-}" ] || continue
 
+            # 跳过协议族不匹配的行
             if [ "$rule_family" != "$family" ]; then
                 continue
             fi
 
+            # 验证配置
             proto="${proto:-tcp}"
+
+            if [ "$family" = "ipv4" ]; then
+                if ! validate_ipv4 "$source"; then
+                    echo "[W] Line $line_num: Invalid IPv4 address: $source" >&2
+                    continue
+                fi
+            else
+                if ! validate_ipv6 "$source"; then
+                    echo "[W] Line $line_num: Invalid IPv6 address: $source" >&2
+                    continue
+                fi
+            fi
+
+            if ! validate_port "$port"; then
+                echo "[W] Line $line_num: Invalid port: $port (must be 1-65535)" >&2
+                continue
+            fi
+
+            if ! validate_proto "$proto"; then
+                echo "[W] Line $line_num: Invalid protocol: $proto (must be tcp/udp/icmp)" >&2
+                continue
+            fi
+
+            # 应用规则
             "$cmd" -A "$CHAIN" -p "$proto" -s "$source" --dport "$port" -j RETURN
 
+            # 记录管理的端口
             key="$proto:$port"
             case " $managed " in
                 *" $key "*) ;;
@@ -108,6 +222,7 @@ apply_family() {
         done < "$CONFIG"
     fi
 
+    # 为管理的端口添加 DROP 规则
     for key in $managed; do
         proto="${key%%:*}"
         port="${key#*:}"
@@ -117,8 +232,37 @@ apply_family() {
     "$cmd" -A "$CHAIN" -j RETURN
 }
 
+# ====================================
+# IPv6 支持检测
+# ====================================
+
+is_ipv6_enabled() {
+    # 检查1: /proc/net/if_inet6 文件存在
+    if [ ! -f /proc/net/if_inet6 ]; then
+        return 1
+    fi
+
+    # 检查2: IPv6 未被 sysctl 禁用
+    if [ -f /proc/sys/net/ipv6/conf/all/disable_ipv6 ]; then
+        if [ "$(cat /proc/sys/net/ipv6/conf/all/disable_ipv6)" = "1" ]; then
+            return 1
+        fi
+    fi
+
+    return 0
+}
+
+# ====================================
+# 主流程
+# ====================================
+
+# 应用 IPv4 规则
 apply_family ipv4 iptables
-apply_family ipv6 ip6tables
+
+# 应用 IPv6 规则（仅当系统支持时）
+if is_ipv6_enabled; then
+    apply_family ipv6 ip6tables
+fi
 EOF
 
     if [ $? -ne 0 ]; then
@@ -142,11 +286,73 @@ ensure_whitelist_config() {
     fi
 
     cat > "${WHITELIST_CONFIG}" <<'EOF'
+# ====================================
+# Docker 端口白名单配置文件
+# ====================================
+#
 # 格式: 协议族 源地址 端口 协议
-# 示例:
+#
+# 字段说明：
+#   协议族: ipv4 或 ipv6
+#   源地址: IP 地址或 CIDR 格式（如 192.168.1.0/24）
+#   端口:   1-65535 之间的端口号
+#   协议:   tcp（默认）| udp | icmp
+#
+# 注意事项：
+#   - 配置错误会被跳过并记录警告
+#   - 未列出的端口将被拒绝访问
+#   - Docker 容器之间的通信不受影响
+#   - 修改配置后重启 Docker 生效
+#
+# ====================================
+# IPv4 示例
+# ====================================
+
+# 允许单个 IP 访问 HTTPS
 # ipv4 1.2.3.4/32 443 tcp
-# ipv4 10.0.0.0/8 8080 tcp
-# ipv6 2001:db8::/32 443 tcp
+
+# 允许内网段访问 HTTP
+# ipv4 10.0.0.0/8 80 tcp
+# ipv4 172.16.0.0/12 80 tcp
+# ipv4 192.168.0.0/16 80 tcp
+
+# 允许办公网段访问 SSH
+# ipv4 203.0.113.0/24 22 tcp
+
+# 允许特定 IP 访问数据库端口
+# ipv4 198.51.100.10/32 3306 tcp
+# ipv4 198.51.100.10/32 5432 tcp
+
+# ====================================
+# IPv6 示例（需要系统支持 IPv6）
+# ====================================
+
+# 允许 IPv6 地址访问 HTTPS
+# ipv6 2001:db8::1/128 443 tcp
+
+# 允许 IPv6 网段访问 HTTP
+# ipv6 2001:db8::/32 80 tcp
+
+# ====================================
+# UDP 协议示例
+# ====================================
+
+# 允许 DNS 查询
+# ipv4 198.51.100.0/24 53 udp
+
+# ====================================
+# 常见服务端口参考
+# ====================================
+# HTTP: 80
+# HTTPS: 443
+# SSH: 22
+# FTP: 21
+# SMTP: 25
+# DNS: 53
+# MySQL: 3306
+# PostgreSQL: 5432
+# MongoDB: 27017
+# Redis: 6379
 EOF
 
     if [ $? -ne 0 ]; then
