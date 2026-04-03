@@ -238,14 +238,26 @@ else
     info "Rclone already installed, skip"
 fi
 
-# 10.启用 BBR
+# 10.安装 Glow
+if [ -z "$(command -v glow)" ]; then
+    info "Installing Glow"
+    if [ -f /data/.init/glow.sh ]; then
+        . /data/.init/glow.sh
+    else
+        bash -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/glow.sh" -o -)"
+    fi
+else
+    info "Glow already installed, skip"
+fi
+
+# 11.启用 BBR
 if sysctl net.ipv4.tcp_available_congestion_control | grep bbr; then
     echo "net.core.default_qdisc=fq" >>/etc/sysctl.conf
     echo "net.ipv4.tcp_congestion_control=bbr" >>/etc/sysctl.conf
     sysctl -p
 fi
 
-# 11.安装 acme.sh
+# 12.安装 acme.sh
 if [ ! -d /data/.acme.sh ]; then
     curl https://get.acme.sh | sh
     sh /data/.init/acme.sh MIRROR="${MIRROR}" LET_MAIL="${LET_MAIL}"
