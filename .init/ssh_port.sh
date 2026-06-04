@@ -24,13 +24,11 @@ if [ -e "/etc/ssh/sshd_config" ]; then
     # SSH端口
     if [ "$NOT_CHANGE_SSH_PORT" != "true" ]; then
         info "Change SSH port to 33022"
-        RESULT=$(grep "^[pP][oO][rR][tT]\s*" /etc/ssh/sshd_config)
-        if [ -n "$RESULT" ]; then
-            sed -i "s#$RESULT#Port 33022#" /etc/ssh/sshd_config
+        if grep -Eq '^[[:space:]]*[pP][oO][rR][tT][[:space:]]+' /etc/ssh/sshd_config; then
+            sed -i 's@^[[:space:]]*[pP][oO][rR][tT][[:space:]].*@Port 33022@' /etc/ssh/sshd_config
         else
-            RESULT=$(grep "^#[pP][oO][rR][tT]\s*" /etc/ssh/sshd_config)
-            if [ -n "$RESULT" ]; then
-                sed -i "/^#[pP][oO][rR][tT]\s*/a Port 33022" /etc/ssh/sshd_config
+            if grep -Eq '^[[:space:]]*#[[:space:]]*[pP][oO][rR][tT][[:space:]]+' /etc/ssh/sshd_config; then
+                sed -i '/^[[:space:]]*#[[:space:]]*[pP][oO][rR][tT][[:space:]][[:space:]]*/a Port 33022' /etc/ssh/sshd_config
             else
                 echo "Port 33022" >>/etc/ssh/sshd_config
             fi

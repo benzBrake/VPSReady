@@ -33,9 +33,11 @@ install_cron() {
 }
 install_cron
 if [ -d "/data/.acme.sh" ]; then
-    grep .acme.sh/acme.sh.env ~/.bashrc > /dev/null
-    if [ $? -ne 0 ]; then
-        echo ". \"/data/.acme.sh/acme.sh.env\"" > ~/.bashrc
+    if [ ! -f "$HOME/.bashrc" ]; then
+        : > "$HOME/.bashrc"
+    fi
+    if ! grep -F '. "/data/.acme.sh/acme.sh.env"' "$HOME/.bashrc" >/dev/null 2>&1; then
+        echo '. "/data/.acme.sh/acme.sh.env"' >>"$HOME/.bashrc"
     fi
     (crontab -u root -l | grep -v "acme.sh") | crontab -u root -
     crontab -u root -l 2>/dev/null | { cat; echo "0 0 * * * \"/data/.acme.sh\"/acme.sh --cron --home \"/data/.acme.sh\" > /dev/null"; } | crontab -u root -
