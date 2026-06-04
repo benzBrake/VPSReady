@@ -139,7 +139,7 @@ else
             if ! crontab -l | grep -q "/data/.init/ssh_key.sh"; then
                 (
                     crontab -l 2>/dev/null
-                    echo "@reboot /data/.init/ssh_key.sh"
+                    echo "@reboot sh /data/.init/ssh_key.sh -k"
                 ) | crontab -
             fi
         fi

@@ -1,17 +1,64 @@
 #!/usr/bin/env sh
 
-# Function to print usage
 usage() {
-    echo "Usage: $0 [-r]"
+    echo "Usage: $0 [-k] [-r] [-P] [-A] [-M] [-S]"
+    echo "  -k    Install or update the authorized_keys file (default behavior)"
     echo "  -r    Forcefully overwrite the authorized_keys file with the new public key"
+    echo "  -P    Set PasswordAuthentication to no"
+    echo "  -A    Set PubkeyAuthentication to yes"
+    echo "  -M    Set MaxAuthTries to 20"
+    echo "  -S    Restart the SSH service after updating sshd_config"
     exit 1
 }
 
-# Parse command line options
-while getopts ":r" opt; do
+INSTALL_KEY=true
+FORCE_OVERWRITE=false
+DISABLE_PASSWORD_LOGIN=false
+ENABLE_PUBKEY_AUTH=false
+SET_MAX_AUTH_TRIES=false
+RESTART_SSH=false
+
+ensure_sshd_option() {
+    option_name="$1"
+    option_value="$2"
+
+    if grep -Eq "^[[:space:]]*#?[[:space:]]*${option_name}[[:space:]]+" /etc/ssh/sshd_config; then
+        sed -i "s@^[[:space:]]*#\\?[[:space:]]*${option_name}[[:space:]].*@${option_name} ${option_value}@" /etc/ssh/sshd_config
+    else
+        printf '%s %s\n' "${option_name}" "${option_value}" >>/etc/ssh/sshd_config
+    fi
+}
+
+restart_ssh_service() {
+    if [ -n "$(command -v systemctl)" ]; then
+        systemctl restart sshd
+    elif [ -n "$(command -v rc-service)" ]; then
+        rc-service sshd restart
+    else
+        service sshd restart
+        service ssh restart
+    fi
+}
+
+while getopts ":krPAMS" opt; do
     case ${opt} in
+        k )
+            INSTALL_KEY=true
+            ;;
         r )
             FORCE_OVERWRITE=true
+            ;;
+        P )
+            DISABLE_PASSWORD_LOGIN=true
+            ;;
+        A )
+            ENABLE_PUBKEY_AUTH=true
+            ;;
+        M )
+            SET_MAX_AUTH_TRIES=true
+            ;;
+        S )
+            RESTART_SSH=true
             ;;
         \? )
             usage
@@ -28,87 +75,81 @@ if [ -z "${KEY_URL}" ]; then
     KEY_URL="${GH_MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/pub/xiaoji.pub"
 fi
 
-# Function to generate a random number
 randomNum() {
     command -v shuf >/dev/null && shuf -i 100000-999999 -n 1 || jot -r 1 100000 999999
 }
 
-# 安装公钥
-echo "Install public key"
-mkdir -p /tmp "$HOME/.ssh" >/dev/null
-PUBKeyFile="/tmp/$(randomNum).pub"
-while :; do
-    echo >/dev/null
-    [ ! -f "${PUBKeyFile}" ] && break
+if [ "${INSTALL_KEY}" = true ]; then
+    echo "Install public key"
+    mkdir -p /tmp "$HOME/.ssh" >/dev/null
     PUBKeyFile="/tmp/$(randomNum).pub"
-done
+    while :; do
+        echo >/dev/null
+        [ ! -f "${PUBKeyFile}" ] && break
+        PUBKeyFile="/tmp/$(randomNum).pub"
+    done
 
-# 获取脚本所在目录的绝对路径
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-# 获取项目根目录（脚本目录的上级目录）
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-PROJECT_KEY_FILE="${PROJECT_ROOT}/pub/xiaoji.pub"
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+    PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+    PROJECT_KEY_FILE="${PROJECT_ROOT}/pub/xiaoji.pub"
 
-# 优先级：环境变量 > 项目目录 > /data挂载 > 网络下载
-if [ -n "${SSHKEY}" ]; then
-    echo "Using SSH public key from environment..."
-    printf '%s\n' "${SSHKEY}" > "${PUBKeyFile}"
-elif [ -f "${PROJECT_KEY_FILE}" ]; then
-    echo "Using project public key..."
-    cp "${PROJECT_KEY_FILE}" "${PUBKeyFile}" >/dev/null
-elif [ -f /data/pub/xiaoji.pub ]; then
-    echo "Using mounted public key..."
-    cp /data/pub/xiaoji.pub "${PUBKeyFile}" >/dev/null
-else
-    echo "Downloading public key from mirror..."
-    curl -sSL "${KEY_URL}" -o "${PUBKeyFile}"
-fi
+    # 优先级：环境变量 > 项目目录 > /data挂载 > 网络下载
+    if [ -n "${SSHKEY}" ]; then
+        echo "Using SSH public key from environment..."
+        printf '%s\n' "${SSHKEY}" > "${PUBKeyFile}"
+    elif [ -f "${PROJECT_KEY_FILE}" ]; then
+        echo "Using project public key..."
+        cp "${PROJECT_KEY_FILE}" "${PUBKeyFile}" >/dev/null
+    elif [ -f /data/pub/xiaoji.pub ]; then
+        echo "Using mounted public key..."
+        cp /data/pub/xiaoji.pub "${PUBKeyFile}" >/dev/null
+    else
+        echo "Downloading public key from mirror..."
+        curl -sSL "${KEY_URL}" -o "${PUBKeyFile}"
+    fi
 
-if [ "${FORCE_OVERWRITE}" = true ]; then
-    # Forcefully overwrite authorized_keys
-    cat "${PUBKeyFile}" > "$HOME/.ssh/authorized_keys"
-else
-    # Append the key only if it does not already exist
-    if [ ! -f "$HOME/.ssh/authorized_keys" ]; then
+    if [ "${FORCE_OVERWRITE}" = true ]; then
         cat "${PUBKeyFile}" > "$HOME/.ssh/authorized_keys"
     else
-        AuthKeyStr=$(cat "$HOME/.ssh/authorized_keys")
-        PUBKeyStr=$(awk '{$1=$1};1' < "${PUBKeyFile}")
-        CompareResult=$(echo "${AuthKeyStr}" | grep "${PUBKeyStr}")
-        [ "$CompareResult" = "" ] && {
-            cat "${PUBKeyFile}" >> "$HOME/.ssh/authorized_keys"
-        }
+        if [ ! -f "$HOME/.ssh/authorized_keys" ]; then
+            cat "${PUBKeyFile}" > "$HOME/.ssh/authorized_keys"
+        else
+            AuthKeyStr=$(cat "$HOME/.ssh/authorized_keys")
+            PUBKeyStr=$(awk '{$1=$1};1' < "${PUBKeyFile}")
+            CompareResult=$(echo "${AuthKeyStr}" | grep "${PUBKeyStr}")
+            [ "$CompareResult" = "" ] && {
+                cat "${PUBKeyFile}" >> "$HOME/.ssh/authorized_keys"
+            }
+        fi
+    fi
+
+    chmod 600 "$HOME/.ssh/authorized_keys" >/dev/null
+
+    [ -n "${PUBKeyFile}" ] && rm -rf "${PUBKeyFile}"
+fi
+
+if [ "${DISABLE_PASSWORD_LOGIN}" = true ] || [ "${ENABLE_PUBKEY_AUTH}" = true ] || [ "${SET_MAX_AUTH_TRIES}" = true ] || [ "${RESTART_SSH}" = true ]; then
+    if [ "$(id -u)" -ne 0 ]; then
+        echo "Please run this script as root."
+        exit 1
     fi
 fi
 
-chmod 600 "$HOME/.ssh/authorized_keys" >/dev/null
-
-# 清理临时文件
-[ -n "${PUBKeyFile}" ] && rm -rf "${PUBKeyFile}"
-
-# Check if the script is run as root
-if [ "$(id -u)" -ne 0 ]; then
-  echo "Please run this script as root."
-  exit 1
+if [ "${DISABLE_PASSWORD_LOGIN}" = true ]; then
+    echo "Disable password login"
+    ensure_sshd_option "PasswordAuthentication" "no"
 fi
 
-# Disable password login
-echo "Disable password login"
-sed -i 's/^PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
-# Enable public key authentication
-echo "Enable public key authentication"
-sed -i.bak 's/^[#]\?[ ]*PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
-# Change MaxAuthTries to 20
-echo "Change maxAuthTries"
-sed -i 's/^[#]\?[ ]*MaxAuthTries.*/MaxAuthTries 20/' /etc/ssh/sshd_config
+if [ "${ENABLE_PUBKEY_AUTH}" = true ]; then
+    echo "Enable public key authentication"
+    ensure_sshd_option "PubkeyAuthentication" "yes"
+fi
 
-# Restart the SSH service to apply the changes
-if [ -n "$(command -v systemctl)" ]; then
-    systemctl restart sshd
-elif [ -n "$(command -v rc-service)" ]; then
-    # Alpine Linux (OpenRC)
-    rc-service sshd restart
-else
-    service sshd restart
-    service ssh restart
+if [ "${SET_MAX_AUTH_TRIES}" = true ]; then
+    echo "Change maxAuthTries"
+    ensure_sshd_option "MaxAuthTries" "20"
+fi
+
+if [ "${RESTART_SSH}" = true ]; then
+    restart_ssh_service
 fi

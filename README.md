@@ -202,6 +202,25 @@ DOCKER_LOG_MAX_SIZE=50m DOCKER_LOG_MAX_FILE=5 bash -c "$(curl -sSL "https://raw.
 bash -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/ssh_key.sh" -o -)"
 ```
 
+默认只安装或更新 `authorized_keys`，不会修改 `sshd_config`。
+
+**可选参数：**
+
+| 参数 | 说明 |
+|------|------|
+| `-k` | 显式安装或更新公钥 |
+| `-r` | 覆盖现有 `authorized_keys` |
+| `-P` | 设置 `PasswordAuthentication no` |
+| `-A` | 设置 `PubkeyAuthentication yes` |
+| `-M` | 设置 `MaxAuthTries 20` |
+| `-S` | 修改完成后重启 SSH 服务 |
+
+例如：
+
+```bash
+curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/ssh_key.sh" | sh -s -- -k -P -A -M -S
+```
+
 ### 其他模块
 
 所有独立脚本都在 `.init/` 目录下，可根据需要单独执行。

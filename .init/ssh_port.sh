@@ -6,9 +6,9 @@ if [ -e "/etc/ssh/sshd_config" ]; then
     info "Backup SSH config"
     cp -f /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
     if [ -f "/data/.init/ssh_key.sh" ]; then
-        sh /data/.init/ssh_key.sh MIRROR="${GH_MIRROR}"
+        GH_MIRROR="${GH_MIRROR}" sh /data/.init/ssh_key.sh -k -A -M
     else
-        bash -c "$(curl -sSL "${GH_MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/ssh_key.sh" -o -)"
+        curl -sSL "${GH_MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/ssh_key.sh" | KEY_URL="${GH_MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/pub/xiaoji.pub" sh -s -- -k -A -M
     fi
     # 仅公钥登录
     info "Enable only login with public key"
