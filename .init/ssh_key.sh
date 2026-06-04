@@ -1,13 +1,15 @@
 #!/usr/bin/env sh
 
 usage() {
-    echo "Usage: $0 [-k] [-r] [-P] [-A] [-M] [-S]"
+    echo "Usage: $0 [-k] [-r] [-P] [-A] [-M] [-S] [-b repo_base_url] [-u key_url]"
     echo "  -k    Install or update the authorized_keys file (default behavior)"
     echo "  -r    Forcefully overwrite the authorized_keys file with the new public key"
     echo "  -P    Set PasswordAuthentication to no"
     echo "  -A    Set PubkeyAuthentication to yes"
     echo "  -M    Set MaxAuthTries to 20"
     echo "  -S    Restart the SSH service after updating sshd_config"
+    echo "  -b    Set repository base URL, used to derive pub/xiaoji.pub"
+    echo "  -u    Set public key download URL directly"
     exit 1
 }
 
@@ -17,6 +19,11 @@ DISABLE_PASSWORD_LOGIN=false
 ENABLE_PUBKEY_AUTH=false
 SET_MAX_AUTH_TRIES=false
 RESTART_SSH=false
+REPO_BASE_URL="${REPO_BASE_URL}"
+
+trim_trailing_slash() {
+    printf '%s' "$1" | sed 's:/*$::'
+}
 
 ensure_sshd_option() {
     option_name="$1"
@@ -40,7 +47,7 @@ restart_ssh_service() {
     fi
 }
 
-while getopts ":krPAMS" opt; do
+while getopts ":krPAMSb:u:" opt; do
     case ${opt} in
         k )
             INSTALL_KEY=true
@@ -60,6 +67,12 @@ while getopts ":krPAMS" opt; do
         S )
             RESTART_SSH=true
             ;;
+        b )
+            REPO_BASE_URL="${OPTARG}"
+            ;;
+        u )
+            KEY_URL="${OPTARG}"
+            ;;
         \? )
             usage
             ;;
@@ -71,8 +84,16 @@ if [ -f /data/.profile ]; then
     . /data/.profile
 fi
 
+if [ -n "${REPO_BASE_URL}" ]; then
+    REPO_BASE_URL="$(trim_trailing_slash "${REPO_BASE_URL}")"
+fi
+
 if [ -z "${KEY_URL}" ]; then
-    KEY_URL="${GH_MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/pub/xiaoji.pub"
+    if [ -n "${REPO_BASE_URL}" ]; then
+        KEY_URL="${REPO_BASE_URL}/pub/xiaoji.pub"
+    else
+        KEY_URL="${GH_MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/pub/xiaoji.pub"
+    fi
 fi
 
 randomNum() {

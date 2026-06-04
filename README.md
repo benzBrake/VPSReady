@@ -214,11 +214,19 @@ bash -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/
 | `-A` | 设置 `PubkeyAuthentication yes` |
 | `-M` | 设置 `MaxAuthTries 20` |
 | `-S` | 修改完成后重启 SSH 服务 |
+| `-b <repo_base_url>` | 指定仓库基地址，并自动拼出 `/pub/xiaoji.pub` |
+| `-u <key_url>` | 直接指定公钥下载地址 |
 
 例如：
 
 ```bash
 curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/ssh_key.sh" | sh -s -- -k -P -A -M -S
+```
+
+如果脚本本身是通过 CDN 或镜像地址直接管道执行，公钥地址也要一并显式传入，因为 `curl | sh` 无法让脚本自动知道自己的来源 URL。例如 `jsdmirror`：
+
+```bash
+curl -sSL "https://cdn.jsdmirror.com/gh/benzBrake/VPSReady@main/.init/ssh_key.sh" | sh -s -- -k -b "https://cdn.jsdmirror.com/gh/benzBrake/VPSReady@main"
 ```
 
 ### 其他模块
