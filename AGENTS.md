@@ -62,10 +62,7 @@ VPSReady/
 ### .sh 文件权限管理
 **重要**：所有 .sh 脚本文件必须具有可执行权限（100755）。
 
-**使用 Claude 提交时**：
-- 项目已配置 `.git/hooks/pre-commit` hook
-- 该 hook 会自动为新增/修改的 .sh 文件添加可执行权限
-- 直接执行 `/zcf:git-commit` 即可，无需手动处理权限
+项目已配置 `.git/hooks/pre-commit` hook，会自动为新增或修改的 .sh 文件添加可执行权限。
 
 **手动提交时**：
 ```bash
