@@ -13,13 +13,19 @@ VPS 自动化初始化脚本项目，用于快速配置新 VPS 环境。
 VPSReady/
 ├── .init/              # 初始化模块脚本
 │   ├── acme.sh        # ACME SSL 证书安装
+│   ├── caddy.sh       # Caddy 安装
 │   ├── docker.sh      # Docker 安装
+│   ├── docker_iptables.sh # Docker 端口白名单配置
+│   ├── docker_logs.sh # Docker 日志轮转配置
+│   ├── glow.sh        # Glow 安装
 │   ├── nginx.sh       # Nginx 安装
 │   ├── ssh_key.sh     # SSH 公钥配置
 │   └── ssh_port.sh    # SSH 端口修改
 ├── .utils/             # 工具函数库
 │   ├── backup.sh      # 备份工具
-│   └── common.sh      # 通用函数
+│   ├── cloudflared.sh # Cloudflared 工具
+│   ├── common.sh      # 通用函数
+│   └── find_large_files.sh # 大文件查找工具
 ├── Dockerfiles/        # Docker 配置文件
 ├── web/                # Web 配置示例
 ├── pub/                # 公钥目录（需用户自行替换）
@@ -44,6 +50,11 @@ VPSReady/
 - 函数定义与调用之间空一行
 - 注释使用 `#`，重要逻辑必须添加注释
 - 长命令使用 `\` 续行
+
+### Shell 文件命名
+- 文件名统一使用小写 `snake_case`，不使用连字符
+- 目录负责表达脚本类别，文件名优先描述操作对象
+- 需要区分操作时使用“动作 + 对象”，例如 `find_large_files.sh`
 
 ### 安全规范
 - 所有变量引用必须使用 `${VAR}` 形式

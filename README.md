@@ -35,13 +35,19 @@ VPSReady 是一套用于 Debian/Ubuntu/Alpine Linux 的 VPS 初始化脚本集�
 VPSReady/
 ├── .init/              # 初始化模块脚本
 │   ├── acme.sh        # ACME SSL 证书申请
+│   ├── caddy.sh       # Caddy 安装配置
 │   ├── docker.sh      # Docker 安装配置
+│   ├── docker_iptables.sh # Docker 端口白名单配置
+│   ├── docker_logs.sh # Docker 日志轮转配置
+│   ├── glow.sh        # Glow 安装配置
 │   ├── nginx.sh       # Nginx 安装配置
 │   ├── ssh_key.sh     # SSH 公钥配置
 │   └── ssh_port.sh    # SSH 端口修改
 ├── .utils/             # 工具函数库
 │   ├── backup.sh      # 备份工具
-│   └── common.sh      # 通用函数
+│   ├── cloudflared.sh # Cloudflared 工具
+│   ├── common.sh      # 通用函数
+│   └── find_large_files.sh # 大文件查找工具
 ├── Dockerfiles/        # Docker 配置文件示例
 ├── web/                # Web 配置示例
 ├── pub/                # 公钥目录（需用户自行替换）
@@ -182,10 +188,10 @@ sudo systemctl restart docker
 
 ```bash
 # 下载并运行脚本
-bash -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/docker-logs.sh" -o -)"
+sh -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/docker_logs.sh" -o -)"
 
 # 或使用环境变量自定义配置
-DOCKER_LOG_MAX_SIZE=50m DOCKER_LOG_MAX_FILE=5 bash -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/docker-logs.sh" -o -)"
+DOCKER_LOG_MAX_SIZE=50m DOCKER_LOG_MAX_FILE=5 sh -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/docker_logs.sh" -o -)"
 ```
 
 **环境变量：**
@@ -232,6 +238,13 @@ curl -sSL "https://cdn.jsdmirror.com/gh/benzBrake/VPSReady@main/.init/ssh_key.sh
 ### 其他模块
 
 所有独立脚本都在 `.init/` 目录下，可根据需要单独执行。
+
+### Shell 文件命名
+
+- 文件名统一使用小写字母和下划线（`snake_case`），不使用连字符。
+- `.init/` 和 `.utils/` 已表达脚本类别，文件名优先直接描述对象，例如 `docker_logs.sh`。
+- 只有需要区分操作时才使用“动作 + 对象”，例如 `find_large_files.sh`。
+- 新增或修改的 `.sh` 文件必须保留可执行权限（Git 模式 `100755`）。
 
 ## 玩 VPS 前置
 

@@ -9,8 +9,8 @@
 #   DOCKER_DAEMON_JSON    daemon.json 路径（默认：/etc/docker/daemon.json）
 #
 # 使用示例：
-#   sudo bash .init/docker-logs.sh
-#   sudo DOCKER_LOG_MAX_SIZE=50m DOCKER_LOG_MAX_FILE=5 bash .init/docker-logs.sh
+#   sudo sh .init/docker_logs.sh
+#   sudo DOCKER_LOG_MAX_SIZE=50m DOCKER_LOG_MAX_FILE=5 sh .init/docker_logs.sh
 
 # ====================================
 # 引入通用函数库

@@ -373,8 +373,8 @@ fi
 
 # 4. 配置 Docker 端口白名单（如果脚本存在）
 if command -v docker >/dev/null 2>&1; then
-    if [ -f "${SCRIPT_DIR}/docker_config_iptables.sh" ]; then
-        if "${SCRIPT_DIR}/docker_config_iptables.sh"; then
+    if [ -f "${SCRIPT_DIR}/docker_iptables.sh" ]; then
+        if "${SCRIPT_DIR}/docker_iptables.sh"; then
             suc "Docker port whitelist configuration completed"
         else
             warn "Docker installed but port whitelist configuration failed, continuing anyway..."
