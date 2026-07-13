@@ -100,6 +100,14 @@ SSHKEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC... your-key-comment" ./init.sh
 NOT_CHANGE_SSH_PORT=true ./init.sh
 ```
 
+### 跳过 SSH 公钥安装
+
+保留 SSH 配置和端口处理，但不新增或更新 `authorized_keys`：
+
+```bash
+NOT_INSTALL_SSH_KEY=true ./init.sh
+```
+
 ### 不安装 Docker
 
 ```bash
@@ -214,7 +222,7 @@ bash -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/
 
 | 参数 | 说明 |
 |------|------|
-| `-k` | 显式安装或更新公钥 |
+| `-k` | 显式安装或更新公钥（`NOT_INSTALL_SSH_KEY=true` 时仍跳过） |
 | `-r` | 覆盖现有 `authorized_keys` |
 | `-P` | 设置 `PasswordAuthentication no` |
 | `-A` | 设置 `PubkeyAuthentication yes` |

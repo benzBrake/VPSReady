@@ -84,6 +84,10 @@ if [ -f /data/.profile ]; then
     . /data/.profile
 fi
 
+if [ "${NOT_INSTALL_SSH_KEY}" = true ]; then
+    INSTALL_KEY=false
+fi
+
 if [ -n "${REPO_BASE_URL}" ]; then
     REPO_BASE_URL="$(trim_trailing_slash "${REPO_BASE_URL}")"
 fi
