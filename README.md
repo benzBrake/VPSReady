@@ -239,6 +239,41 @@ curl -sSL "https://cdn.jsdmirror.com/gh/benzBrake/VPSReady@main/.init/ssh_key.sh
 
 所有独立脚本都在 `.init/` 目录下，可根据需要单独执行。
 
+### Cloudflare Tunnel 多实例管理
+
+`.utils/cloudflare_tunnel.sh` 使用 Cloudflare Zero Trust 控制台生成的 tunnel token，管理多个相互独立的本机连接器。无参数运行时进入交互菜单，也可以使用子命令自动化操作：
+
+```bash
+# 进入交互菜单
+/data/.utils/cloudflare_tunnel.sh
+
+# 安全地交互输入 token 并创建实例
+/data/.utils/cloudflare_tunnel.sh add blog
+
+# 从文件读取 token，token 不会出现在进程参数中
+/data/.utils/cloudflare_tunnel.sh add api --token-file /root/api-tunnel-token
+
+# 查看并管理实例
+/data/.utils/cloudflare_tunnel.sh list
+/data/.utils/cloudflare_tunnel.sh status blog
+/data/.utils/cloudflare_tunnel.sh stop blog
+/data/.utils/cloudflare_tunnel.sh start blog
+/data/.utils/cloudflare_tunnel.sh restart blog
+
+# 删除本机实例，需要确认；自动化脚本可以使用 --force
+/data/.utils/cloudflare_tunnel.sh remove blog
+/data/.utils/cloudflare_tunnel.sh remove api --force
+
+# 创建退出后即失效的 Quick Tunnel
+/data/.utils/cloudflare_tunnel.sh temp http://127.0.0.1:8080
+```
+
+如果系统安装了 Docker，脚本会为每条 tunnel 创建一个使用 `unless-stopped` 重启策略的独立容器。Docker 已安装但 daemon 不可用时，脚本会报错，不会混用原生模式。如果没有安装 Docker，Debian/Ubuntu 使用 systemd，Alpine 使用 OpenRC，并配置开机启动。
+
+实例数据保存在 `/data/cloudflared/tunnels/<name>`。token 文件权限为 `600`，Docker 容器和系统服务均通过 token 文件启动，不把 token 写入命令参数。实例名称只允许小写字母、数字、下划线和连字符。
+
+`remove` 只停止并删除本机容器或服务以及本地 token，不会删除 Cloudflare 控制台中的 tunnel、DNS、SSL/TLS 或其他远端配置。若创建或启动失败，可以在修复 Docker 或系统服务问题后运行 `start <name>` 重试；需要彻底回滚时运行 `remove <name> --force`。
+
 ### Shell 文件命名
 
 - 文件名统一使用小写字母和下划线（`snake_case`），不使用连字符。
