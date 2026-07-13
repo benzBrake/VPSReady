@@ -255,15 +255,14 @@ chmod +x init.sh scripts/install/*.sh scripts/configure/*.sh scripts/tools/*.sh
 | tcping | `sh scripts/install/tcping.sh` | `TCPING_VERSION`、`TCPING_INSTALL_DIR`、`TCPING_FORCE_REINSTALL` |
 | Nginx | `sh scripts/install/nginx.sh` | 使用 `/data/web` 配置 |
 
-远程执行示例：
+远程完整命令：
 
 ```bash
+curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/acme.sh" | sh
+curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/caddy.sh" | sh
 curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/docker.sh" | sh
-```
-
-安装 tcping：
-
-```bash
+curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/glow.sh" | sh
+curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/nginx.sh" | sh
 curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/tcping.sh" | sh
 ```
 
@@ -286,16 +285,47 @@ DOCKER_LOG_MAX_SIZE=50m DOCKER_LOG_MAX_FILE=5 \
   sh scripts/configure/docker_logs.sh
 ```
 
+远程完整命令：
+
+```bash
+curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/docker_iptables.sh" | sh
+curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/docker_logs.sh" | sh
+curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/ssh_key.sh" | sh -s -- -k
+curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/ssh_port.sh" | sh
+```
+
 #### 工具模块
 
-| 模块 | 使用方式 |
-|------|----------|
-| 备份 | `sh scripts/tools/backup.sh` |
-| Cloudflared 安装及命令转发 | `sh scripts/tools/cloudflared.sh [参数]` |
-| Cloudflare Tunnel 多实例 | `sh scripts/tools/cloudflare_tunnel.sh [add|remove|list|start|stop|restart|status|temp]` |
-| 查找大文件 | `. scripts/tools/find_large_files.sh && find_large_files [目录] [大小阈值MB]` |
+以下命令均可直接复制。将路径、实例名或 token 文件路径替换为自己的值。
 
-工具模块的完整参数可以使用 `-h` 或直接不带参数运行查看。
+```bash
+# 备份 /data，并保留默认配置
+sudo sh scripts/tools/backup.sh
+
+# 安装 cloudflared（未安装时）并显示版本
+sudo sh scripts/tools/cloudflared.sh --version
+
+# 创建名为 blog 的 Cloudflare Tunnel 实例
+sudo sh scripts/tools/cloudflare_tunnel.sh add blog
+
+# 从文件读取 token 创建名为 api 的 Tunnel 实例
+sudo sh scripts/tools/cloudflare_tunnel.sh add api --token-file /root/api-tunnel-token
+
+# 查找 /data 下大于 500 MB 的文件
+sh scripts/tools/find_large_files.sh /data 500
+```
+
+远程完整命令：
+
+```bash
+# 下载到临时文件后执行，避免远程脚本依赖相对路径时失效
+curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/tools/backup.sh" -o /tmp/vpsready-backup.sh && sudo bash /tmp/vpsready-backup.sh
+curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/tools/cloudflared.sh" -o /tmp/vpsready-cloudflared.sh && sudo sh /tmp/vpsready-cloudflared.sh --version
+curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/tools/cloudflare_tunnel.sh" -o /tmp/vpsready-cloudflare-tunnel.sh && sudo sh /tmp/vpsready-cloudflare-tunnel.sh add blog
+curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/tools/find_large_files.sh" -o /tmp/vpsready-find-large-files.sh && sh /tmp/vpsready-find-large-files.sh /data 500
+```
+
+`backup.sh` 需要先通过环境变量或编辑脚本配置备份目录、数据库和远端存储；其默认的 MySQL 密码占位值不可直接用于生产环境。
 
 `.ezenv` 是部署到 `/data/.ezenv` 的运行时环境文件，会将 `/data/scripts/tools` 加入 `PATH`，并加载 `/data/.ez/ez.bash`。不要把它当作可执行模块运行。
 
