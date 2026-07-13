@@ -4,10 +4,11 @@ SCRIPT_DIR=$(
     cd "$(dirname "$0")"
     pwd
 )
-chmod +x "${SCRIPT_DIR}"/.init/*.sh
-chmod +x "${SCRIPT_DIR}"/.utils/*
+chmod +x "${SCRIPT_DIR}"/scripts/install/*.sh
+chmod +x "${SCRIPT_DIR}"/scripts/configure/*.sh
+chmod +x "${SCRIPT_DIR}"/scripts/tools/*.sh
 
-. "${SCRIPT_DIR}"/.utils/common.sh
+. "${SCRIPT_DIR}"/lib/common.sh
 
 install_packages_separately() {
     package_manager="$1"
@@ -136,10 +137,10 @@ else
         # 兼容 Scaleway
         # 添加计划任务
         if [ -n "$(command -v crontab)" ]; then
-            if ! crontab -l | grep -q "/data/.init/ssh_key.sh"; then
+            if ! crontab -l | grep -q "/data/scripts/configure/ssh_key.sh"; then
                 (
                     crontab -l 2>/dev/null
-                    echo "@reboot sh /data/.init/ssh_key.sh -k"
+                    echo "@reboot sh /data/scripts/configure/ssh_key.sh -k"
                 ) | crontab -
             fi
         fi
@@ -149,10 +150,10 @@ else
             fi
             echo "export NOT_CHANGE_SSH_PORT=true" >>/data/.profile
             if [ -n "$(command -v crontab)" ]; then
-                if ! crontab -l | grep -q "/data/.init/ssh_port.sh"; then
+                if ! crontab -l | grep -q "/data/scripts/configure/ssh_port.sh"; then
                     (
                         crontab -l 2>/dev/null
-                        echo "@reboot /data/.init/ssh_port.sh"
+                    echo "@reboot /data/scripts/configure/ssh_port.sh"
                     ) | crontab -
                 fi
             fi
@@ -164,18 +165,18 @@ else
         info "Using SSH public key from environment for this run"
     fi
 
-    /data/.init/ssh_port.sh
+    /data/scripts/configure/ssh_port.sh
     # 4.新增用户
     [ $INSTALL_MYSQL = true ] && /usr/sbin/useradd -u 1001 -s /sbin/nologin mysql 2>/dev/null
     /usr/sbin/useradd -u 1002 -s /sbin/nologin www 2>/dev/null
     # 5.安装 Docker
     if [ $INSTALL_DOCKER = true ] && [ -z "$(command -v docker)" ]; then
         info "Installing Docker"
-        if [ -f /data/.init/docker.sh ]; then
-            chmod +x /data/.init/docker.sh
-            /data/.init/docker.sh
+        if [ -f /data/scripts/install/docker.sh ]; then
+            chmod +x /data/scripts/install/docker.sh
+            /data/scripts/install/docker.sh
         else
-            bash -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/docker.sh" -o -)"
+            bash -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/docker.sh" -o -)"
         fi
         # 启动 Docker 服务
         if [ -n "$(command -v systemctl)" ]; then
@@ -201,10 +202,10 @@ else
     fi
     # Nginx
     [ $INSTALL_NGINX = true ] && {
-        if [ -f /data/.init/nginx.sh ]; then
-            /data/.init/nginx.sh
+        if [ -f /data/scripts/install/nginx.sh ]; then
+            /data/scripts/install/nginx.sh
         else
-            bash -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/nginx.sh" -o -)"
+            bash -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/nginx.sh" -o -)"
         fi
     }
 fi
@@ -212,7 +213,7 @@ fi
 # 6.配置 vim
 if [ ! -f /root/.vimrc ]; then
     info "Configure vim"
-    ln -sf /data/.init/.vimrc /root/.vimrc
+        ln -sf /data/config/.vimrc /root/.vimrc
 fi
 
 # 7.安装 ez-bash
@@ -241,10 +242,10 @@ fi
 # 10.安装 Glow
 if [ -z "$(command -v glow)" ]; then
     info "Installing Glow"
-    if [ -f /data/.init/glow.sh ]; then
-        . /data/.init/glow.sh
+    if [ -f /data/scripts/install/glow.sh ]; then
+        . /data/scripts/install/glow.sh
     else
-        bash -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/glow.sh" -o -)"
+        bash -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/glow.sh" -o -)"
     fi
 else
     info "Glow already installed, skip"
@@ -260,7 +261,7 @@ fi
 # 12.安装 acme.sh
 if [ ! -d /data/.acme.sh ]; then
     curl https://get.acme.sh | sh
-    sh /data/.init/acme.sh MIRROR="${MIRROR}" LET_MAIL="${LET_MAIL}"
+    sh /data/scripts/install/acme.sh MIRROR="${MIRROR}" LET_MAIL="${LET_MAIL}"
 fi
 
 suc "ALL Done"

@@ -33,26 +33,18 @@ VPSReady 是一套用于 Debian/Ubuntu/Alpine Linux 的 VPS 初始化脚本集�
 
 ```
 VPSReady/
-├── .init/              # 初始化模块脚本
-│   ├── acme.sh        # ACME SSL 证书申请
-│   ├── caddy.sh       # Caddy 安装配置
-│   ├── docker.sh      # Docker 安装配置
-│   ├── docker_iptables.sh # Docker 端口白名单配置
-│   ├── docker_logs.sh # Docker 日志轮转配置
-│   ├── glow.sh        # Glow 安装配置
-│   ├── nginx.sh       # Nginx 安装配置
-│   ├── ssh_key.sh     # SSH 公钥配置
-│   └── ssh_port.sh    # SSH 端口修改
-├── .utils/             # 工具函数库
-│   ├── backup.sh      # 备份工具
-│   ├── cloudflared.sh # Cloudflared 工具
-│   ├── common.sh      # 通用函数
-│   └── find_large_files.sh # 大文件查找工具
+├── scripts/            # 可单独执行的脚本
+│   ├── install/        # 安装脚本
+│   ├── configure/      # 配置脚本
+│   └── tools/          # 工具脚本
+├── lib/                # Shell 函数库
+│   └── common.sh       # 通用函数
+├── config/             # 配置和模板文件
 ├── Dockerfiles/        # Docker 配置文件示例
 ├── web/                # Web 配置示例
 ├── pub/                # 公钥目录（需用户自行替换）
 ├── init.sh             # 主初始化脚本入口
-├── .ezenv              # 环境变量配置
+├── .ezenv              # 运行时环境变量配置
 └── .docker-compose.yml.demo  # Docker Compose 示例
 ```
 <!-- /AUTO:directory -->
@@ -196,10 +188,10 @@ sudo systemctl restart docker
 
 ```bash
 # 下载并运行脚本
-sh -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/docker_logs.sh" -o -)"
+sh -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/docker_logs.sh" -o -)"
 
 # 或使用环境变量自定义配置
-DOCKER_LOG_MAX_SIZE=50m DOCKER_LOG_MAX_FILE=5 sh -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/docker_logs.sh" -o -)"
+DOCKER_LOG_MAX_SIZE=50m DOCKER_LOG_MAX_FILE=5 sh -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/docker_logs.sh" -o -)"
 ```
 
 **环境变量：**
@@ -213,7 +205,7 @@ DOCKER_LOG_MAX_SIZE=50m DOCKER_LOG_MAX_FILE=5 sh -c "$(curl -sSL "https://raw.gi
 ### 安装 SSH 公钥
 
 ```bash
-bash -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/ssh_key.sh" -o -)"
+bash -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/ssh_key.sh" -o -)"
 ```
 
 默认只安装或更新 `authorized_keys`，不会修改 `sshd_config`。
@@ -234,46 +226,96 @@ bash -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/
 例如：
 
 ```bash
-curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/ssh_key.sh" | sh -s -- -k -P -A -M -S
+curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/ssh_key.sh" | sh -s -- -k -P -A -M -S
 ```
 
 如果脚本本身是通过 CDN 或镜像地址直接管道执行，公钥地址也要一并显式传入，因为 `curl | sh` 无法让脚本自动知道自己的来源 URL。例如 `jsdmirror`：
 
 ```bash
-curl -sSL "https://cdn.jsdmirror.com/gh/benzBrake/VPSReady@main/.init/ssh_key.sh" | sh -s -- -k -b "https://cdn.jsdmirror.com/gh/benzBrake/VPSReady@main"
+curl -sSL "https://cdn.jsdmirror.com/gh/benzBrake/VPSReady@main/scripts/configure/ssh_key.sh" | sh -s -- -k -b "https://cdn.jsdmirror.com/gh/benzBrake/VPSReady@main"
 ```
 
-### 其他模块
+### 所有独立模块
 
-所有独立脚本都在 `.init/` 目录下，可根据需要单独执行。
+所有 `scripts/` 下的脚本都可以单独执行。若使用仓库中的文件，先执行：
+
+```bash
+cd VPSReady
+chmod +x init.sh scripts/install/*.sh scripts/configure/*.sh scripts/tools/*.sh
+```
+
+#### 安装模块
+
+| 模块 | 本地执行 | 主要配置 |
+|------|----------|----------|
+| ACME SSL | `sh scripts/install/acme.sh` | `MIRROR`、`LET_MAIL` |
+| Caddy | `sh scripts/install/caddy.sh` | `CADDY_*`、`DOWNLOAD_URL` |
+| Docker | `sh scripts/install/docker.sh` | `DOCKER_*` |
+| Glow | `sh scripts/install/glow.sh` | `GLOW_VERSION`、`GLOW_INSTALL_DIR`、`GLOW_MIRROR` |
+| Nginx | `sh scripts/install/nginx.sh` | 使用 `/data/web` 配置 |
+
+远程执行示例：
+
+```bash
+curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/docker.sh" | sh
+```
+
+#### 配置模块
+
+| 模块 | 本地执行 | 主要参数或环境变量 |
+|------|----------|-------------------|
+| Docker 端口白名单 | `sh scripts/configure/docker_iptables.sh` | 按脚本提示配置白名单 |
+| Docker 日志轮转 | `sh scripts/configure/docker_logs.sh` | `DOCKER_LOG_MAX_SIZE`、`DOCKER_LOG_MAX_FILE`、`DOCKER_LOG_DRIVER` |
+| SSH 公钥 | `sh scripts/configure/ssh_key.sh -k` | `-r`、`-P`、`-A`、`-M`、`-S`、`-b`、`-u` |
+| SSH 端口 | `sh scripts/configure/ssh_port.sh` | `NOT_CHANGE_SSH_PORT=true` 可跳过改端口 |
+
+例如配置 Docker 日志：
+
+```bash
+DOCKER_LOG_MAX_SIZE=50m DOCKER_LOG_MAX_FILE=5 \
+  sh scripts/configure/docker_logs.sh
+```
+
+#### 工具模块
+
+| 模块 | 使用方式 |
+|------|----------|
+| 备份 | `sh scripts/tools/backup.sh` |
+| Cloudflared 安装及命令转发 | `sh scripts/tools/cloudflared.sh [参数]` |
+| Cloudflare Tunnel 多实例 | `sh scripts/tools/cloudflare_tunnel.sh [add|remove|list|start|stop|restart|status|temp]` |
+| 查找大文件 | `. scripts/tools/find_large_files.sh && find_large_files [目录] [大小阈值MB]` |
+
+工具模块的完整参数可以使用 `-h` 或直接不带参数运行查看。
+
+`.ezenv` 是部署到 `/data/.ezenv` 的运行时环境文件，会将 `/data/scripts/tools` 加入 `PATH`，并加载 `/data/.ez/ez.bash`。不要把它当作可执行模块运行。
 
 ### Cloudflare Tunnel 多实例管理
 
-`.utils/cloudflare_tunnel.sh` 使用 Cloudflare Zero Trust 控制台生成的 tunnel token，管理多个相互独立的本机连接器。无参数运行时进入交互菜单，也可以使用子命令自动化操作：
+`scripts/tools/cloudflare_tunnel.sh` 使用 Cloudflare Zero Trust 控制台生成的 tunnel token，管理多个相互独立的本机连接器。无参数运行时进入交互菜单，也可以使用子命令自动化操作：
 
 ```bash
 # 进入交互菜单
-/data/.utils/cloudflare_tunnel.sh
+/data/scripts/tools/cloudflare_tunnel.sh
 
 # 安全地交互输入 token 并创建实例
-/data/.utils/cloudflare_tunnel.sh add blog
+/data/scripts/tools/cloudflare_tunnel.sh add blog
 
 # 从文件读取 token，token 不会出现在进程参数中
-/data/.utils/cloudflare_tunnel.sh add api --token-file /root/api-tunnel-token
+/data/scripts/tools/cloudflare_tunnel.sh add api --token-file /root/api-tunnel-token
 
 # 查看并管理实例
-/data/.utils/cloudflare_tunnel.sh list
-/data/.utils/cloudflare_tunnel.sh status blog
-/data/.utils/cloudflare_tunnel.sh stop blog
-/data/.utils/cloudflare_tunnel.sh start blog
-/data/.utils/cloudflare_tunnel.sh restart blog
+/data/scripts/tools/cloudflare_tunnel.sh list
+/data/scripts/tools/cloudflare_tunnel.sh status blog
+/data/scripts/tools/cloudflare_tunnel.sh stop blog
+/data/scripts/tools/cloudflare_tunnel.sh start blog
+/data/scripts/tools/cloudflare_tunnel.sh restart blog
 
 # 删除本机实例，需要确认；自动化脚本可以使用 --force
-/data/.utils/cloudflare_tunnel.sh remove blog
-/data/.utils/cloudflare_tunnel.sh remove api --force
+/data/scripts/tools/cloudflare_tunnel.sh remove blog
+/data/scripts/tools/cloudflare_tunnel.sh remove api --force
 
 # 创建退出后即失效的 Quick Tunnel
-/data/.utils/cloudflare_tunnel.sh temp http://127.0.0.1:8080
+/data/scripts/tools/cloudflare_tunnel.sh temp http://127.0.0.1:8080
 ```
 
 如果系统安装了 Docker，脚本会为每条 tunnel 创建一个使用 `unless-stopped` 重启策略的独立容器。Docker 已安装但 daemon 不可用时，脚本会报错，不会混用原生模式。如果没有安装 Docker，Debian/Ubuntu 使用 systemd，Alpine 使用 OpenRC，并配置开机启动。
@@ -285,7 +327,7 @@ curl -sSL "https://cdn.jsdmirror.com/gh/benzBrake/VPSReady@main/.init/ssh_key.sh
 ### Shell 文件命名
 
 - 文件名统一使用小写字母和下划线（`snake_case`），不使用连字符。
-- `.init/` 和 `.utils/` 已表达脚本类别，文件名优先直接描述对象，例如 `docker_logs.sh`。
+- `scripts/install/`、`scripts/configure/` 和 `scripts/tools/` 表达脚本类别，文件名优先直接描述对象，例如 `docker_logs.sh`。
 - 只有需要区分操作时才使用“动作 + 对象”，例如 `find_large_files.sh`。
 - 新增或修改的 `.sh` 文件必须保留可执行权限（Git 模式 `100755`）。
 

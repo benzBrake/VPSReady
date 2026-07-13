@@ -8,8 +8,8 @@ SCRIPT_DIR=$(
     pwd
 )
 
-if [ -f "${SCRIPT_DIR}/common.sh" ]; then
-    . "${SCRIPT_DIR}/common.sh"
+if [ -f "${SCRIPT_DIR}/../../lib/common.sh" ]; then
+    . "${SCRIPT_DIR}/../../lib/common.sh"
 else
     info() { echo "[I] $*" >&2; }
     warn() { echo "[W] $*" >&2; }

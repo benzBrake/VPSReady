@@ -3,8 +3,8 @@
 # 用途：在未安装 UFW 的系统中，为 Docker 配置基于 DOCKER-USER 的端口白名单
 
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
-if [ -f "${SCRIPT_DIR}/../.utils/common.sh" ]; then
-    . "${SCRIPT_DIR}/../.utils/common.sh"
+if [ -f "${SCRIPT_DIR}/../../lib/common.sh" ]; then
+    . "${SCRIPT_DIR}/../../lib/common.sh"
 else
     info() { echo "[I] $*"; }
     warn() { echo "[W] $*"; }

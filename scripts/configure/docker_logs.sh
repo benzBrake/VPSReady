@@ -9,15 +9,15 @@
 #   DOCKER_DAEMON_JSON    daemon.json 路径（默认：/etc/docker/daemon.json）
 #
 # 使用示例：
-#   sudo sh .init/docker_logs.sh
-#   sudo DOCKER_LOG_MAX_SIZE=50m DOCKER_LOG_MAX_FILE=5 sh .init/docker_logs.sh
+#   sudo sh scripts/configure/docker_logs.sh
+#   sudo DOCKER_LOG_MAX_SIZE=50m DOCKER_LOG_MAX_FILE=5 sh scripts/configure/docker_logs.sh
 
 # ====================================
 # 引入通用函数库
 # ====================================
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
-if [ -f "${SCRIPT_DIR}/../.utils/common.sh" ]; then
-    . "${SCRIPT_DIR}/../.utils/common.sh"
+if [ -f "${SCRIPT_DIR}/../../lib/common.sh" ]; then
+    . "${SCRIPT_DIR}/../../lib/common.sh"
 else
     # 如果 common.sh 不可用，定义基本日志函数
     info() { echo "[I] $*"; }

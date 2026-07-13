@@ -1,4 +1,4 @@
-export PATH=${PATH}:/data/.utils
+export PATH="${PATH}:/data/scripts/tools"
 export RCLONE_CONFIG=/data/rclone/rclone.conf
 export EZ_HOME="/data/.ez"
 if [ -f "/data/.profile" ]; then

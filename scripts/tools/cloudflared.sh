@@ -1,14 +1,14 @@
 #!/bin/sh
 # cloudflared 安装与执行工具脚本
-# 用法: .utils/cloudflared.sh [参数]
+# 用法: scripts/tools/cloudflared.sh [参数]
 # 如果 cloudflared 未安装，会先安装再执行命令
 
 # ====================================
 # 引入通用函数库
 # ====================================
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
-if [ -f "${SCRIPT_DIR}/common.sh" ]; then
-    . "${SCRIPT_DIR}/common.sh"
+if [ -f "${SCRIPT_DIR}/../../lib/common.sh" ]; then
+    . "${SCRIPT_DIR}/../../lib/common.sh"
 else
     # 如果 common.sh 不可用，定义基本日志函数
     info() { echo "[I] $*" >&2; }

@@ -1,14 +1,14 @@
 #!/usr/bin/env sh
 [ -f "/data/.profile" ] && . /data/.profile
-[ -f "/data/.utils/common.sh" ] && . /data/.utils/common.sh
+[ -f "/data/lib/common.sh" ] && . /data/lib/common.sh
 if [ -e "/etc/ssh/sshd_config" ]; then
     # 备份SSH配置
     info "Backup SSH config"
     cp -f /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
-    if [ -f "/data/.init/ssh_key.sh" ]; then
-        GH_MIRROR="${GH_MIRROR}" sh /data/.init/ssh_key.sh -k -A -M
+    if [ -f "/data/scripts/configure/ssh_key.sh" ]; then
+        GH_MIRROR="${GH_MIRROR}" sh /data/scripts/configure/ssh_key.sh -k -A -M
     else
-        curl -sSL "${GH_MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/.init/ssh_key.sh" | KEY_URL="${GH_MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/pub/xiaoji.pub" sh -s -- -k -A -M
+        curl -sSL "${GH_MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/ssh_key.sh" | KEY_URL="${GH_MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/pub/xiaoji.pub" sh -s -- -k -A -M
     fi
     # 仅公钥登录
     info "Enable only login with public key"

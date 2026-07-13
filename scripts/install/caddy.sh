@@ -5,8 +5,8 @@
 # 引入通用函数库
 # ====================================
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
-if [ -f "${SCRIPT_DIR}/../.utils/common.sh" ]; then
-    . "${SCRIPT_DIR}/../.utils/common.sh"
+if [ -f "${SCRIPT_DIR}/../../lib/common.sh" ]; then
+    . "${SCRIPT_DIR}/../../lib/common.sh"
 else
     # 如果 common.sh 不可用，定义基本日志函数
     info() { echo "[I] $*" >&2; }

@@ -11,7 +11,7 @@ VPS 自动化初始化脚本项目，用于快速配置新 VPS 环境。
 ## 项目结构
 ```
 VPSReady/
-├── .init/              # 初始化模块脚本
+├── scripts/            # 可单独执行的脚本（install/configure/tools）
 │   ├── acme.sh        # ACME SSL 证书安装
 │   ├── caddy.sh       # Caddy 安装
 │   ├── docker.sh      # Docker 安装
@@ -21,10 +21,10 @@ VPSReady/
 │   ├── nginx.sh       # Nginx 安装
 │   ├── ssh_key.sh     # SSH 公钥配置
 │   └── ssh_port.sh    # SSH 端口修改
-├── .utils/             # 工具函数库
+├── lib/                # Shell 函数库
 │   ├── backup.sh      # 备份工具
 │   ├── cloudflared.sh # Cloudflared 工具
-│   ├── common.sh      # 通用函数
+│   ├── common.sh      # 通用函数（已迁移至 lib/）
 │   └── find_large_files.sh # 大文件查找工具
 ├── Dockerfiles/        # Docker 配置文件
 ├── web/                # Web 配置示例
