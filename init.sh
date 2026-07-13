@@ -251,14 +251,21 @@ else
     info "Glow already installed, skip"
 fi
 
-# 11.启用 BBR
+# 11.安装 NVM 和最新 LTS Node.js
+if [ -f "${SCRIPT_DIR}/scripts/install/nvm.sh" ]; then
+    "${SCRIPT_DIR}/scripts/install/nvm.sh"
+else
+    warn "NVM install script not found, skipping"
+fi
+
+# 12.启用 BBR
 if sysctl net.ipv4.tcp_available_congestion_control | grep bbr; then
     echo "net.core.default_qdisc=fq" >>/etc/sysctl.conf
     echo "net.ipv4.tcp_congestion_control=bbr" >>/etc/sysctl.conf
     sysctl -p
 fi
 
-# 12.安装 acme.sh
+# 13.安装 acme.sh
 if [ ! -d /data/.acme.sh ]; then
     curl https://get.acme.sh | sh
     sh /data/scripts/install/acme.sh MIRROR="${MIRROR}" LET_MAIL="${LET_MAIL}"
