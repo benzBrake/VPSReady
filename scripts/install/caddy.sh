@@ -27,6 +27,21 @@ DOWNLOAD_URL="${DOWNLOAD_URL:-}"
 ARCH="${ARCH:-}"
 CADDY_OS="${CADDY_OS:-}"
 
+# 使用 curl 或 Alpine BusyBox wget 下载文件
+download_file() {
+    DOWNLOAD_SOURCE_URL="${1}"
+    DOWNLOAD_DESTINATION="${2}"
+
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL "${DOWNLOAD_SOURCE_URL}" -o "${DOWNLOAD_DESTINATION}"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -qO "${DOWNLOAD_DESTINATION}" "${DOWNLOAD_SOURCE_URL}"
+    else
+        err "Neither curl nor wget is available"
+        return 1
+    fi
+}
+
 # ====================================
 # 检测系统架构
 # ====================================
@@ -79,7 +94,14 @@ get_latest_release() {
     info "Fetching latest release from ${CADDY_REPO}..."
 
     # 尝试使用 GitHub API 获取最新 release
-    LATEST_RELEASE=$(curl -fsSL "https://api.github.com/repos/${CADDY_REPO}/releases/latest" 2>/dev/null)
+    RELEASE_METADATA=$(mktemp) || return 1
+    if ! download_file "https://api.github.com/repos/${CADDY_REPO}/releases/latest" "${RELEASE_METADATA}"; then
+        rm -f "${RELEASE_METADATA}"
+        err "Failed to fetch release information"
+        return 1
+    fi
+    LATEST_RELEASE=$(cat "${RELEASE_METADATA}")
+    rm -f "${RELEASE_METADATA}"
 
     if [ -z "${LATEST_RELEASE}" ]; then
         err "Failed to fetch release information"
@@ -115,13 +137,13 @@ build_download_url() {
     DOWNLOAD_URL="https://github.com/${CADDY_REPO}/releases/download/${CADDY_VERSION}/caddy-${CADDY_OS}-${ARCH}.tar.gz"
 
     # 验证 URL 是否可访问
-    if ! curl -fsSL -I "${DOWNLOAD_URL}" >/dev/null 2>&1; then
+    if ! download_file "${DOWNLOAD_URL}" /dev/null; then
         warn "Primary URL not accessible, trying mirror..."
 
         # 尝试使用 jsDelivr CDN
         DOWNLOAD_URL="https://cdn.jsdelivr.net/gh/${CADDY_REPO}@${CADDY_VERSION}/caddy_${CADDY_OS}_${ARCH}"
 
-        if ! curl -fsSL -I "${DOWNLOAD_URL}" >/dev/null 2>&1; then
+        if ! download_file "${DOWNLOAD_URL}" /dev/null; then
             err "Failed to find accessible download URL"
             return 1
         fi
@@ -141,7 +163,7 @@ download_caddy() {
     CADDY_TEMP="${TEMP_DIR}/caddy"
     DOWNLOAD_TEMP="${TEMP_DIR}/caddy.tar.gz"
 
-    if ! curl -fsSL "${DOWNLOAD_URL}" -o "${DOWNLOAD_TEMP}"; then
+    if ! download_file "${DOWNLOAD_URL}" "${DOWNLOAD_TEMP}"; then
         err "Failed to download Caddy"
         rm -rf "${TEMP_DIR}"
         return 1

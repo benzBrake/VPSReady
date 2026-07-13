@@ -22,6 +22,21 @@ GLOW_VERSION=${GLOW_VERSION:-latest}
 GLOW_INSTALL_DIR=${GLOW_INSTALL_DIR:-/usr/local/bin}
 GLOW_MIRROR=${GLOW_MIRROR:-https://github.com}
 
+# 使用 curl 或 Alpine BusyBox wget 下载文件
+download_file() {
+    DOWNLOAD_SOURCE_URL="${1}"
+    DOWNLOAD_DESTINATION="${2}"
+
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL "${DOWNLOAD_SOURCE_URL}" -o "${DOWNLOAD_DESTINATION}"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -qO "${DOWNLOAD_DESTINATION}" "${DOWNLOAD_SOURCE_URL}"
+    else
+        err "Neither curl nor wget is available"
+        return 1
+    fi
+}
+
 # ====================================
 # 检测系统架构
 # ====================================
@@ -115,10 +130,18 @@ download_glow() {
     if [ "${VERSION}" = "latest" ]; then
         BASE_URL="${GLOW_MIRROR}/charmbracelet/glow/releases/latest/download"
         # 获取最新版本号（用于构建文件名）
-        ACTUAL_VERSION=$(curl -fsSL "${GLOW_MIRROR}/charmbracelet/glow/releases/latest" | grep -o 'tag/[vV][0-9][^"]*' | sed 's/tag\///' | head -1)
+        RELEASE_METADATA=$(mktemp)
+        if download_file "${GLOW_MIRROR}/charmbracelet/glow/releases/latest" "${RELEASE_METADATA}"; then
+            ACTUAL_VERSION=$(grep -o 'tag/[vV][0-9][^"]*' "${RELEASE_METADATA}" | sed 's/tag\///' | head -1)
+        fi
+        rm -f "${RELEASE_METADATA}"
         if [ -z "${ACTUAL_VERSION}" ]; then
             # 备选方案：尝试从 API 获取
-            ACTUAL_VERSION=$(curl -fsSL "https://api.github.com/repos/charmbracelet/glow/releases/latest" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
+            RELEASE_METADATA=$(mktemp)
+            if download_file "https://api.github.com/repos/charmbracelet/glow/releases/latest" "${RELEASE_METADATA}"; then
+                ACTUAL_VERSION=$(grep '"tag_name"' "${RELEASE_METADATA}" | sed -E 's/.*"([^"]+)".*/\1/')
+            fi
+            rm -f "${RELEASE_METADATA}"
         fi
         if [ -z "${ACTUAL_VERSION}" ]; then
             warn "Failed to determine latest version number, trying without version in filename"
@@ -149,7 +172,7 @@ download_glow() {
     # 尝试每个 URL 直到成功
     for url in ${URLS}; do
         info "Trying: ${url}"
-        if curl -fsSL "${url}" -o glow.tar.gz 2>/dev/null; then
+        if download_file "${url}" glow.tar.gz 2>/dev/null; then
             info "Successfully downloaded from: ${url}"
             DOWNLOAD_URL="${url}"
             break

@@ -1,6 +1,22 @@
 #!/usr/bin/env sh
 [ -f "/data/.profile" ] && . /data/.profile
 [ -f "/data/lib/common.sh" ] && . /data/lib/common.sh
+
+# 使用 curl 或 Alpine BusyBox wget 下载文件
+download_file() {
+    DOWNLOAD_SOURCE_URL="${1}"
+    DOWNLOAD_DESTINATION="${2}"
+
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL "${DOWNLOAD_SOURCE_URL}" -o "${DOWNLOAD_DESTINATION}"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -qO "${DOWNLOAD_DESTINATION}" "${DOWNLOAD_SOURCE_URL}"
+    else
+        err "Neither curl nor wget is available"
+        return 1
+    fi
+}
+
 if [ -e "/etc/ssh/sshd_config" ]; then
     # 备份SSH配置
     info "Backup SSH config"
@@ -8,7 +24,13 @@ if [ -e "/etc/ssh/sshd_config" ]; then
     if [ -f "/data/scripts/configure/ssh_key.sh" ]; then
         GH_MIRROR="${GH_MIRROR}" sh /data/scripts/configure/ssh_key.sh -k -A -M
     else
-        curl -sSL "${GH_MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/ssh_key.sh" | KEY_URL="${GH_MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/pub/xiaoji.pub" sh -s -- -k -A -M
+        SSH_KEY_SCRIPT=$(mktemp)
+        if ! download_file "${GH_MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/ssh_key.sh" "${SSH_KEY_SCRIPT}"; then
+            rm -f "${SSH_KEY_SCRIPT}"
+            exit 1
+        fi
+        KEY_URL="${GH_MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/pub/xiaoji.pub" sh "${SSH_KEY_SCRIPT}" -k -A -M
+        rm -f "${SSH_KEY_SCRIPT}"
     fi
     # 仅公钥登录
     info "Enable only login with public key"

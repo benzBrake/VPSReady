@@ -21,6 +21,21 @@ SET_MAX_AUTH_TRIES=false
 RESTART_SSH=false
 REPO_BASE_URL="${REPO_BASE_URL}"
 
+# 使用 curl 或 Alpine BusyBox wget 下载文件
+download_file() {
+    DOWNLOAD_SOURCE_URL="${1}"
+    DOWNLOAD_DESTINATION="${2}"
+
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL "${DOWNLOAD_SOURCE_URL}" -o "${DOWNLOAD_DESTINATION}"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -qO "${DOWNLOAD_DESTINATION}" "${DOWNLOAD_SOURCE_URL}"
+    else
+        echo "Neither curl nor wget is available" >&2
+        return 1
+    fi
+}
+
 trim_trailing_slash() {
     printf '%s' "$1" | sed 's:/*$::'
 }
@@ -130,7 +145,11 @@ if [ "${INSTALL_KEY}" = true ]; then
         cp /data/pub/xiaoji.pub "${PUBKeyFile}" >/dev/null
     else
         echo "Downloading public key from mirror..."
-        curl -sSL "${KEY_URL}" -o "${PUBKeyFile}"
+        if ! download_file "${KEY_URL}" "${PUBKeyFile}" || [ ! -s "${PUBKeyFile}" ]; then
+            echo "Failed to download public key" >&2
+            rm -f "${PUBKeyFile}"
+            exit 1
+        fi
     fi
 
     if [ "${FORCE_OVERWRITE}" = true ]; then

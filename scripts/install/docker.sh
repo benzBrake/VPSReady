@@ -15,6 +15,21 @@ else
     suc() { echo "[S] $*"; }
 fi
 
+# 使用 curl 或 Alpine BusyBox wget 下载文件
+download_file() {
+    DOWNLOAD_SOURCE_URL="${1}"
+    DOWNLOAD_DESTINATION="${2}"
+
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL "${DOWNLOAD_SOURCE_URL}" -o "${DOWNLOAD_DESTINATION}"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -qO "${DOWNLOAD_DESTINATION}" "${DOWNLOAD_SOURCE_URL}"
+    else
+        err "Neither curl nor wget is available"
+        return 1
+    fi
+}
+
 # ====================================
 # 环境变量与默认值
 # ====================================
@@ -336,7 +351,16 @@ configure_docker_logs() {
 
 # 1. 安装 Docker
 info "Installing Docker..."
-bash -c "$(curl -fsSL https://get.docker.com -o -)"
+DOCKER_INSTALLER=$(mktemp)
+if ! download_file "https://get.docker.com" "${DOCKER_INSTALLER}"; then
+    rm -f "${DOCKER_INSTALLER}"
+    exit 1
+fi
+if ! bash "${DOCKER_INSTALLER}"; then
+    rm -f "${DOCKER_INSTALLER}"
+    exit 1
+fi
+rm -f "${DOCKER_INSTALLER}"
 
 # 2. 安装 docker-compose（如果需要）
 if [ -z "${NOT_INSTALL_DOCKER_COMPOSE}" ]; then
