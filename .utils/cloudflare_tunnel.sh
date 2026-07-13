@@ -231,9 +231,11 @@ docker_create() {
         return 1
     fi
 
+    # The state token is mode 600 and owned by root on the host.
     if ! docker run -d \
         --name "${CONTAINER_NAME}" \
         --restart unless-stopped \
+        --user 0:0 \
         --mount "type=bind,src=${TOKEN_PATH},dst=/run/secrets/cloudflared-token,readonly" \
         "${DOCKER_IMAGE}" \
         tunnel --no-autoupdate run --token-file /run/secrets/cloudflared-token >/dev/null; then
