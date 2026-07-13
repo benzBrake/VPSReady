@@ -252,6 +252,7 @@ chmod +x init.sh scripts/install/*.sh scripts/configure/*.sh scripts/tools/*.sh
 | Caddy | `sh scripts/install/caddy.sh` | `CADDY_*`、`DOWNLOAD_URL` |
 | Docker | `sh scripts/install/docker.sh` | `DOCKER_*` |
 | Glow | `sh scripts/install/glow.sh` | `GLOW_VERSION`、`GLOW_INSTALL_DIR`、`GLOW_MIRROR` |
+| tcping | `sh scripts/install/tcping.sh` | `TCPING_VERSION`、`TCPING_INSTALL_DIR`、`TCPING_FORCE_REINSTALL` |
 | Nginx | `sh scripts/install/nginx.sh` | 使用 `/data/web` 配置 |
 
 远程执行示例：
@@ -259,6 +260,15 @@ chmod +x init.sh scripts/install/*.sh scripts/configure/*.sh scripts/tools/*.sh
 ```bash
 curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/docker.sh" | sh
 ```
+
+安装 tcping：
+
+```bash
+curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/tcping.sh" | sh
+```
+
+默认从 GitHub Releases 网页解析最新版本，并按 Linux 系统架构下载对应资产，不使用 GitHub API。
+可通过 `TCPING_VERSION` 指定版本、`TCPING_INSTALL_DIR` 指定安装目录，或设置 `TCPING_FORCE_REINSTALL=true` 强制重装。
 
 #### 配置模块
 
