@@ -252,6 +252,7 @@ chmod +x init.sh scripts/install/*.sh scripts/configure/*.sh scripts/tools/*.sh
 | Caddy | `sh scripts/install/caddy.sh` | `CADDY_*`、`DOWNLOAD_URL` |
 | Docker | `sh scripts/install/docker.sh` | `DOCKER_*` |
 | Glow | `sh scripts/install/glow.sh` | `GLOW_VERSION`、`GLOW_INSTALL_DIR`、`GLOW_MIRROR` |
+| NVM + Node.js LTS | `sh scripts/install/nvm.sh` | `NVM_DIR`、`NVM_INSTALL_URL` |
 | tcping | `sh scripts/install/tcping.sh` | `TCPING_VERSION`、`TCPING_INSTALL_DIR`、`TCPING_FORCE_REINSTALL` |
 | Nginx | `sh scripts/install/nginx.sh` | 使用 `/data/web` 配置 |
 
@@ -262,6 +263,7 @@ curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/in
 curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/caddy.sh" | sh
 curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/docker.sh" | sh
 curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/glow.sh" | sh
+curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/nvm.sh" | sh
 curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/nginx.sh" | sh
 curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/tcping.sh" | sh
 ```

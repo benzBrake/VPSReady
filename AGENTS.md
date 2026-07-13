@@ -45,6 +45,11 @@ VPSReady/
 - 使用 `[ ]` 进行测试，避免使用 `[[ ]]`
 - 错误处理：关键命令后检查 `$?`
 
+### Alpine 下载兼容性
+- Alpine 的最小镜像默认只提供 BusyBox `wget`，不能假设已安装 `curl`。
+- 任何需要下载远程内容的脚本都必须优先检测可用下载工具，并在 `curl` 不存在时兼容 BusyBox `wget`；除非脚本明确先安装了 `curl`。
+- 使用 `wget` 时采用 BusyBox 兼容参数，例如 `wget -qO "${OUTPUT_FILE}" "${URL}"`，避免 GNU Wget 专有选项。
+
 ### 代码风格
 - 缩进使用 4 空格
 - 函数定义与调用之间空一行
