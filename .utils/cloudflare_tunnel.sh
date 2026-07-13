@@ -235,6 +235,7 @@ docker_create() {
     if ! docker run -d \
         --name "${CONTAINER_NAME}" \
         --restart unless-stopped \
+        --network host \
         --user 0:0 \
         --mount "type=bind,src=${TOKEN_PATH},dst=/run/secrets/cloudflared-token,readonly" \
         "${DOCKER_IMAGE}" \
