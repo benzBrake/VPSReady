@@ -78,17 +78,16 @@ VPSReady/
 ### .sh 文件权限管理
 **重要**：所有 .sh 脚本文件必须具有可执行权限（100755）。
 
-项目已配置 `.git/hooks/pre-commit` hook，会自动为新增或修改的 .sh 文件添加可执行权限。
+项目使用 `.githooks/pre-commit` hook 自动管理权限，提交时自动为新增或修改的 .sh 文件设置 `+x`。
 
-**手动提交时**：
+**克隆后首次配置**：
 ```bash
-# 为单个文件添加权限
-chmod +x path/to/script.sh
-git update-index --chmod=+x path/to/script.sh
+git config core.hooksPath .githooks
+```
 
-# 批量为所有 .sh 文件添加权限
-find . -name "*.sh" -exec chmod +x {} \;
-find . -name "*.sh" -exec git update-index --chmod=+x {} \;
+**手动修复权限**：
+```bash
+git update-index --chmod=+x path/to/script.sh
 ```
 
 ### 提交规范
