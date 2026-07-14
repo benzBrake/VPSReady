@@ -167,10 +167,48 @@ read_token() {
             return 1
         fi
         printf 'Tunnel token: ' >&2
-        stty -echo
-        trap 'stty echo; printf "\n" >&2; exit 130' INT TERM HUP
-        IFS= read -r TOKEN_VALUE
-        stty echo
+
+        if ! TOKEN_TTY_STATE=$(stty -g 2>/dev/null); then
+            err "Unable to read terminal settings"
+            return 1
+        fi
+
+        if ! stty -echo -icanon min 1 time 0 2>/dev/null; then
+            err "Unable to configure terminal for token input"
+            return 1
+        fi
+
+        restore_token_terminal() {
+            if ! stty "${TOKEN_TTY_STATE}" 2>/dev/null; then
+                stty echo 2>/dev/null || true
+            fi
+        }
+
+        trap 'restore_token_terminal; printf "\n" >&2; exit 130' INT TERM HUP
+        TOKEN_BACKSPACE=$(printf '\010')
+        TOKEN_DELETE=$(printf '\177')
+
+        # Read one byte at a time so each token character can be masked.
+        while :; do
+            TOKEN_CHAR=$(dd if=/dev/tty bs=1 count=1 2>/dev/null) || break
+            if [ -z "${TOKEN_CHAR}" ]; then
+                break
+            fi
+
+            case "${TOKEN_CHAR}" in
+                "${TOKEN_BACKSPACE}"|"${TOKEN_DELETE}")
+                    if [ -n "${TOKEN_VALUE}" ]; then
+                        TOKEN_VALUE=${TOKEN_VALUE%?}
+                        printf '\b \b' >&2
+                    fi
+                    ;;
+                *)
+                    TOKEN_VALUE="${TOKEN_VALUE}${TOKEN_CHAR}"
+                    printf '*' >&2
+                    ;;
+            esac
+        done
+        restore_token_terminal
         trap - INT TERM HUP
         printf '\n' >&2
     fi
