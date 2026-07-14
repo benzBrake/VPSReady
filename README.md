@@ -252,7 +252,7 @@ chmod +x init.sh scripts/install/*.sh scripts/configure/*.sh scripts/tools/*.sh
 | Caddy | `sh scripts/install/caddy.sh` | `CADDY_*`、`DOWNLOAD_URL` |
 | Docker | `sh scripts/install/docker.sh` | `DOCKER_*` |
 | Glow | `sh scripts/install/glow.sh` | `GLOW_VERSION`、`GLOW_INSTALL_DIR`、`GLOW_MIRROR` |
-| NVM + Node.js LTS | `sh scripts/install/nvm.sh` | `NVM_DIR`、`NVM_INSTALL_URL` |
+| mise + Node.js LTS | `sh scripts/install/mise.sh` | `MISE_INSTALL_URL` |
 | tcping | `sh scripts/install/tcping.sh` | `TCPING_VERSION`、`TCPING_INSTALL_DIR`、`TCPING_FORCE_REINSTALL` |
 | Nginx | `sh scripts/install/nginx.sh` | 使用 `/data/web` 配置 |
 
@@ -263,10 +263,25 @@ curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/in
 curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/caddy.sh" | sh
 curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/docker.sh" | sh
 curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/glow.sh" | sh
-curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/nvm.sh" | sh
+curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/mise.sh" | sh
 curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/nginx.sh" | sh
 curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/tcping.sh" | sh
 ```
+
+mise 会默认安装最新 LTS 版本的 Node.js，并将其设为全局版本，也可以使用 `mise run <task>` 执行项目任务。可使用以下命令切换 Node.js 版本：
+
+```bash
+# 设置全局版本
+mise use --global node@20
+
+# 设置当前项目版本
+mise use node@20
+
+# 临时切换当前 shell 的版本
+mise shell node@20
+```
+
+旧版 `nvm.sh` 仍保留用于兼容，但 `init.sh` 不再自动调用 NVM。
 
 默认从 GitHub Releases 网页解析最新版本，并按 Linux 系统架构下载对应资产，不使用 GitHub API。
 可通过 `TCPING_VERSION` 指定版本、`TCPING_INSTALL_DIR` 指定安装目录，或设置 `TCPING_FORCE_REINSTALL=true` 强制重装。

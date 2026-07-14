@@ -251,11 +251,11 @@ else
     info "Glow already installed, skip"
 fi
 
-# 11.安装 NVM 和最新 LTS Node.js
-if [ -f "${SCRIPT_DIR}/scripts/install/nvm.sh" ]; then
-    "${SCRIPT_DIR}/scripts/install/nvm.sh"
+# 11.安装 mise 和最新 LTS Node.js
+if [ -f "${SCRIPT_DIR}/scripts/install/mise.sh" ]; then
+    "${SCRIPT_DIR}/scripts/install/mise.sh"
 else
-    warn "NVM install script not found, skipping"
+    bash -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/mise.sh" -o -)"
 fi
 
 # 12.启用 BBR
