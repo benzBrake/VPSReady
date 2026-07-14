@@ -151,6 +151,99 @@ ensure_native_cloudflared() {
     fi
 }
 
+parse_interactive_token() {
+    TOKEN_INPUT_LINE_COUNT=$(printf '%s\n' "$1" | wc -l | tr -d '[:space:]')
+    if [ "${TOKEN_INPUT_LINE_COUNT}" -ne 1 ]; then
+        TOKEN_VALUE=""
+        TOKEN_INPUT_LINE_COUNT=""
+        err "Tunnel token input must be a single line"
+        return 1
+    fi
+
+    TOKEN_INPUT_VALUE=$(
+        printf '%s\n' "$1" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//'
+    )
+
+    if [ -z "${TOKEN_INPUT_VALUE}" ]; then
+        TOKEN_VALUE=""
+        TOKEN_INPUT_LINE_COUNT=""
+        err "Tunnel token cannot be empty"
+        return 1
+    fi
+
+    case "${TOKEN_INPUT_VALUE}" in
+        *[[:space:]]*)
+            TOKEN_CANDIDATE=$(
+                printf '%s\n' "${TOKEN_INPUT_VALUE}" \
+                    | sed -n 's/^.*[[:space:]]\([^[:space:]][^[:space:]]*\)$/\1/p'
+            )
+            TOKEN_COMMAND=$(
+                printf '%s\n' "${TOKEN_INPUT_VALUE}" \
+                    | sed 's/[[:space:]][^[:space:]][^[:space:]]*$//'
+            )
+            TOKEN_EXECUTABLE=$(
+                printf '%s\n' "${TOKEN_COMMAND}" \
+                    | sed -n 's/[[:space:]][[:space:]]*service[[:space:]][[:space:]]*install$//p'
+            )
+            TOKEN_EXECUTABLE=$(
+                printf '%s\n' "${TOKEN_EXECUTABLE}" \
+                    | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/^sudo[[:space:]][[:space:]]*//'
+            )
+
+            case "${TOKEN_EXECUTABLE}" in
+                \"*\")
+                    TOKEN_EXECUTABLE=${TOKEN_EXECUTABLE#\"}
+                    TOKEN_EXECUTABLE=${TOKEN_EXECUTABLE%\"}
+                    ;;
+                \'*\')
+                    TOKEN_EXECUTABLE=${TOKEN_EXECUTABLE#\'}
+                    TOKEN_EXECUTABLE=${TOKEN_EXECUTABLE%\'}
+                    ;;
+                *[[:space:]]*)
+                    TOKEN_VALUE=""
+                    TOKEN_INPUT_LINE_COUNT=""
+                    TOKEN_INPUT_VALUE=""
+                    TOKEN_CANDIDATE=""
+                    TOKEN_COMMAND=""
+                    TOKEN_EXECUTABLE=""
+                    err "Enter a tunnel token or a cloudflared service install command"
+                    return 1
+                    ;;
+            esac
+
+            TOKEN_EXECUTABLE_NAME=$(
+                printf '%s\n' "${TOKEN_EXECUTABLE}" | sed 's|^.*/||; s|^.*\\||'
+            )
+            case "${TOKEN_EXECUTABLE_NAME}" in
+                cloudflared|cloudflared.exe)
+                    TOKEN_VALUE="${TOKEN_CANDIDATE}"
+                    ;;
+                *)
+                    TOKEN_VALUE=""
+                    TOKEN_INPUT_LINE_COUNT=""
+                    TOKEN_INPUT_VALUE=""
+                    TOKEN_CANDIDATE=""
+                    TOKEN_COMMAND=""
+                    TOKEN_EXECUTABLE=""
+                    TOKEN_EXECUTABLE_NAME=""
+                    err "Enter a tunnel token or a cloudflared service install command"
+                    return 1
+                    ;;
+            esac
+            ;;
+        *)
+            TOKEN_VALUE="${TOKEN_INPUT_VALUE}"
+            ;;
+    esac
+
+    TOKEN_INPUT_LINE_COUNT=""
+    TOKEN_INPUT_VALUE=""
+    TOKEN_CANDIDATE=""
+    TOKEN_COMMAND=""
+    TOKEN_EXECUTABLE=""
+    TOKEN_EXECUTABLE_NAME=""
+}
+
 read_token() {
     TOKEN_FILE_SOURCE="${1:-}"
     TOKEN_VALUE=""
@@ -166,7 +259,7 @@ read_token() {
             err "Interactive token input requires a terminal; use --token-file"
             return 1
         fi
-        printf 'Tunnel token: ' >&2
+        printf 'Tunnel token or service install command: ' >&2
 
         if ! TOKEN_TTY_STATE=$(stty -g 2>/dev/null); then
             err "Unable to read terminal settings"
@@ -211,6 +304,8 @@ read_token() {
         restore_token_terminal
         trap - INT TERM HUP
         printf '\n' >&2
+
+        parse_interactive_token "${TOKEN_VALUE}" || return 1
     fi
 
     if [ -z "${TOKEN_VALUE}" ]; then
@@ -220,6 +315,7 @@ read_token() {
 
     case "${TOKEN_VALUE}" in
         *[!A-Za-z0-9._=-]*)
+            TOKEN_VALUE=""
             err "Tunnel token contains invalid characters or multiple lines"
             return 1
             ;;

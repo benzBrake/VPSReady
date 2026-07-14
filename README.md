@@ -354,7 +354,7 @@ curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/to
 # 进入交互菜单
 /data/scripts/tools/cloudflare_tunnel.sh
 
-# 安全地交互输入 token 并创建实例
+# 安全地交互输入 token 或粘贴 Cloudflare service install 命令
 /data/scripts/tools/cloudflare_tunnel.sh add blog
 
 # 从文件读取 token，token 不会出现在进程参数中
@@ -374,6 +374,8 @@ curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/to
 # 创建退出后即失效的 Quick Tunnel
 /data/scripts/tools/cloudflare_tunnel.sh temp http://127.0.0.1:8080
 ```
+
+交互输入支持直接粘贴纯 token，也支持 Cloudflare 控制台提供的 `cloudflared service install <token>`、`cloudflared.exe service install <token>` 及带 `sudo` 的形式。脚本只从严格匹配的命令中提取 token，不会执行粘贴的命令；`--token-file` 指定的文件仍应只包含纯 token。
 
 如果系统安装了 Docker，脚本会为每条 tunnel 创建一个使用 `unless-stopped` 重启策略的独立容器。Docker 已安装但 daemon 不可用时，脚本会报错，不会混用原生模式。如果没有安装 Docker，Debian/Ubuntu 使用 systemd，Alpine 使用 OpenRC，并配置开机启动。
 
