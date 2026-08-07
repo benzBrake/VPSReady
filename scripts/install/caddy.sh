@@ -27,6 +27,15 @@ DOWNLOAD_URL="${DOWNLOAD_URL:-}"
 ARCH="${ARCH:-}"
 CADDY_OS="${CADDY_OS:-}"
 
+get_github_mirror_prefix() {
+    GITHUB_MIRROR_PREFIX="${GH_MIRROR:-${MIRROR:-}}"
+    GITHUB_MIRROR_PREFIX=$(printf '%s' "${GITHUB_MIRROR_PREFIX}" | sed 's#/*$##')
+
+    if [ -n "${GITHUB_MIRROR_PREFIX}" ]; then
+        printf '%s/' "${GITHUB_MIRROR_PREFIX}"
+    fi
+}
+
 # 使用 curl 或 Alpine BusyBox wget 下载文件
 download_file() {
     DOWNLOAD_SOURCE_URL="${1}"
@@ -134,11 +143,23 @@ build_download_url() {
 
     # 自动构建 URL
     # 格式: https://github.com/lxhao61/integrated-examples/releases/download/{version}/caddy-{os}-{arch}.tar.gz
-    DOWNLOAD_URL="https://github.com/${CADDY_REPO}/releases/download/${CADDY_VERSION}/caddy-${CADDY_OS}-${ARCH}.tar.gz"
+    GITHUB_DOWNLOAD_URL="https://github.com/${CADDY_REPO}/releases/download/${CADDY_VERSION}/caddy-${CADDY_OS}-${ARCH}.tar.gz"
+    GITHUB_MIRROR_PREFIX=$(get_github_mirror_prefix)
+    DOWNLOAD_URL="${GITHUB_MIRROR_PREFIX}${GITHUB_DOWNLOAD_URL}"
 
     # 验证 URL 是否可访问
     if ! download_file "${DOWNLOAD_URL}" /dev/null; then
-        warn "Primary URL not accessible, trying mirror..."
+        if [ -n "${GITHUB_MIRROR_PREFIX}" ]; then
+            warn "Mirror URL not accessible, trying direct GitHub..."
+            DOWNLOAD_URL="${GITHUB_DOWNLOAD_URL}"
+
+            if download_file "${DOWNLOAD_URL}" /dev/null; then
+                suc "Download URL: ${DOWNLOAD_URL}"
+                return 0
+            fi
+        fi
+
+        warn "Primary URL not accessible, trying CDN..."
 
         # 尝试使用 jsDelivr CDN
         DOWNLOAD_URL="https://cdn.jsdelivr.net/gh/${CADDY_REPO}@${CADDY_VERSION}/caddy_${CADDY_OS}_${ARCH}"

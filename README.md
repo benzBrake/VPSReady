@@ -339,7 +339,7 @@ chmod +x init.sh scripts/install/*.sh scripts/configure/*.sh scripts/tools/*.sh
 | 模块 | 本地执行 | 主要配置 |
 |------|----------|----------|
 | ACME SSL | `sh scripts/install/acme.sh` | `MIRROR`、`LET_MAIL` |
-| Caddy | `sh scripts/install/caddy.sh` | `CADDY_*`、`DOWNLOAD_URL` |
+| Caddy | `sh scripts/install/caddy.sh` | `MIRROR`、`GH_MIRROR`、`CADDY_*`、`DOWNLOAD_URL` |
 | Docker | `sh scripts/install/docker.sh` | `DOCKER_REGION`、`DOCKER_INSTALL_MIRROR`、`DOCKER_REGISTRY_MIRROR`、`DOCKER_*` |
 | Glow | `sh scripts/install/glow.sh` | `GLOW_VERSION`、`GLOW_INSTALL_DIR`、`GLOW_MIRROR` |
 | mise + Node.js LTS | `sh scripts/install/mise.sh` | `MISE_INSTALL_URL` |
