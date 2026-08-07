@@ -72,11 +72,21 @@ apk update && apk add git
 git clone https://github.com/benzBrake/VPSReady /data
 cd /data
 
-# 3. 执行初始化
+# 3. 交互式初始化
 chmod +x ./init.sh
-./init.sh
+./init.sh -i
 ```
 <!-- /AUTO:quick-start -->
+
+### 交互式初始化
+
+在已连接终端的 VPS 上执行 `./init.sh -i` 会启动初始化向导。向导会依次配置时区、GitHub 镜像、SSH 加固、Let's Encrypt 邮箱，以及 MySQL 客户端、Docker、Nginx、Rclone、Glow、mise/Node.js、BBR 与 acme.sh。
+
+现有环境变量会显示为默认值，直接按 Enter 保留该值。向导不会额外生成交互配置文件；时区、SSH、镜像和软件安装等既有流程本来会修改的系统设置，仍会按确认结果执行。执行前会展示汇总，必须确认后才会开始修改系统。SSH 加固默认启用，包含公钥配置、禁用密码登录和将端口改为 `33022` 的选项。
+
+### 无人值守初始化
+
+`./init.sh` 不带参数时仍保持原有的无人值守行为，适用于云初始化和自动化脚本。`-h` 或 `--help` 可查看可用参数。
 
 ## 高级配置
 
