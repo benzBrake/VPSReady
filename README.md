@@ -134,6 +134,43 @@ MIRROR=https://ghmirror.pp.ua ./init.sh
 NOT_CHANGE_SSH_PORT=true LET_MAIL=your@email.com SSHKEY="ssh-rsa AAAA..." ./init.sh
 ```
 
+### Docker CN 区域网络
+
+CN 模式下使用 Docker CE 国内镜像源和 Docker Hub 加速器：
+
+```bash
+DOCKER_REGION=cn ./init.sh
+```
+
+`cn` 模式下，Debian/Ubuntu 从 Aliyun Docker CE 源安装，Alpine 从其已配置的 APK 源安装。Docker daemon 默认配置以下镜像加速器：
+
+```text
+https://docker.1ms.run
+https://dockerproxy.net
+https://proxy.vvvv.ee
+https://dockerproxy.link
+```
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `DOCKER_REGION` | `global` | `cn` 启用 CN 区域 Docker 安装和镜像配置；`global` 保持原行为。 |
+| `DOCKER_INSTALL_MIRROR` | `Aliyun`（仅 `cn`） | Debian/Ubuntu Docker CE 源，可选 `Aliyun` 或 `AzureChinaCloud`。 |
+| `DOCKER_INSTALLER_URL` | `https://get.docker.com` | `global` 模式使用的官方安装器地址。 |
+| `DOCKER_REGISTRY_MIRROR` | CN 默认镜像列表（仅 `cn`） | 设置单个 `http://` 或 `https://` 地址覆盖默认列表；设置为 `none` 移除 `registry-mirrors`。 |
+
+```bash
+# 使用 Azure 中国 Docker CE 源
+DOCKER_REGION=cn DOCKER_INSTALL_MIRROR=AzureChinaCloud ./init.sh
+
+# 使用自建或指定的镜像加速器
+DOCKER_REGION=cn DOCKER_REGISTRY_MIRROR=https://registry.example.com ./init.sh
+
+# 仅使用 CN 区域 Docker CE 源，不写入镜像加速器
+DOCKER_REGION=cn DOCKER_REGISTRY_MIRROR=none ./init.sh
+```
+
+`MIRROR` 仍只用于 GitHub 资源前缀。若初始化脚本本身需要通过 GitHub 镜像获取，请单独设置 `MIRROR`。
+
 ### Docker 日志轮转配置
 
 脚本会自动为 Docker 配置日志轮转策略，防止容器日志无限增长占用磁盘空间。
@@ -145,7 +182,7 @@ NOT_CHANGE_SSH_PORT=true LET_MAIL=your@email.com SSHKEY="ssh-rsa AAAA..." ./init
 | `DOCKER_LOG_MAX_SIZE` | `10m` | 单个日志文件最大大小（如：`10m`, `50m`, `100m`） |
 | `DOCKER_LOG_MAX_FILE` | `3` | 保留的日志文件数量（如：`3`, `5`, `10`） |
 | `DOCKER_LOG_DRIVER` | `json-file` | 日志驱动类型 |
-| `DOCKER_DISABLE_LOG_CONFIG` | `false` | 设为 `true` 跳过日志配置 |
+| `DOCKER_DISABLE_LOG_CONFIG` | `false` | 设为 `true` 跳过 daemon.json 日志与镜像配置 |
 
 #### 配置示例
 
@@ -169,7 +206,10 @@ cat /etc/docker/daemon.json
 #   "log-opts": {
 #     "max-size": "10m",
 #     "max-file": "3"
-#   }
+#   },
+#   "registry-mirrors": [
+#     "https://docker.1ms.run"
+#   ]
 # }
 
 # 测试日志轮转
@@ -202,6 +242,9 @@ sh -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/sc
 
 # 或使用环境变量自定义配置
 DOCKER_LOG_MAX_SIZE=50m DOCKER_LOG_MAX_FILE=5 sh -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/docker_logs.sh" -o -)"
+
+# 配置 Docker CN Hub 镜像加速器
+DOCKER_REGION=cn sh scripts/configure/docker_logs.sh
 ```
 
 **环境变量：**
@@ -211,6 +254,8 @@ DOCKER_LOG_MAX_SIZE=50m DOCKER_LOG_MAX_FILE=5 sh -c "$(curl -sSL "https://raw.gi
 | `DOCKER_LOG_MAX_SIZE` | `10m` | 单个日志文件最大大小 |
 | `DOCKER_LOG_MAX_FILE` | `3` | 保留的日志文件数量 |
 | `DOCKER_LOG_DRIVER` | `json-file` | 日志驱动类型 |
+| `DOCKER_REGION` | `global` | 设置为 `cn` 时写入 CN 默认镜像加速器。 |
+| `DOCKER_REGISTRY_MIRROR` | - | 单个自定义镜像地址；设为 `none` 移除镜像配置。 |
 
 ### 安装 SSH 公钥
 
@@ -260,7 +305,7 @@ chmod +x init.sh scripts/install/*.sh scripts/configure/*.sh scripts/tools/*.sh
 |------|----------|----------|
 | ACME SSL | `sh scripts/install/acme.sh` | `MIRROR`、`LET_MAIL` |
 | Caddy | `sh scripts/install/caddy.sh` | `CADDY_*`、`DOWNLOAD_URL` |
-| Docker | `sh scripts/install/docker.sh` | `DOCKER_*` |
+| Docker | `sh scripts/install/docker.sh` | `DOCKER_REGION`、`DOCKER_INSTALL_MIRROR`、`DOCKER_REGISTRY_MIRROR`、`DOCKER_*` |
 | Glow | `sh scripts/install/glow.sh` | `GLOW_VERSION`、`GLOW_INSTALL_DIR`、`GLOW_MIRROR` |
 | mise + Node.js LTS | `sh scripts/install/mise.sh` | `MISE_INSTALL_URL` |
 | tcping | `sh scripts/install/tcping.sh` | `TCPING_VERSION`、`TCPING_INSTALL_DIR`、`TCPING_FORCE_REINSTALL` |
