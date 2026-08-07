@@ -104,6 +104,40 @@ is_valid_mirror() {
     return 0
 }
 
+is_valid_docker_region() {
+    case "${1}" in
+        global|cn)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+is_valid_docker_install_mirror() {
+    case "${1}" in
+        ""|Aliyun|AzureChinaCloud)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+is_valid_docker_registry_mirror() {
+    case "${1}" in
+        ""|none)
+            return 0
+            ;;
+        *)
+            is_valid_mirror "${1}"
+            return $?
+            ;;
+    esac
+}
+
 is_valid_timezone() {
     case "${1}" in
         ""|/*|*".."*|*[!ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._+/-]*)
@@ -147,6 +181,32 @@ prompt_mirror() {
 
         warn "Enter an empty value or an http:// or https:// mirror URL."
     done
+}
+
+prompt_docker_region() {
+    while :; do
+        prompt_value "Docker region (global/cn)" "${DOCKER_REGION}"
+        if is_valid_docker_region "${PROMPT_VALUE}"; then
+            DOCKER_REGION="${PROMPT_VALUE}"
+            break
+        fi
+
+        warn "Docker region must be global or cn."
+    done
+
+    if [ "${DOCKER_REGION}" = cn ]; then
+        while :; do
+            prompt_value "Docker CE mirror (Aliyun/AzureChinaCloud)" "${DOCKER_INSTALL_MIRROR:-Aliyun}"
+            if is_valid_docker_install_mirror "${PROMPT_VALUE}" && [ -n "${PROMPT_VALUE}" ]; then
+                DOCKER_INSTALL_MIRROR="${PROMPT_VALUE}"
+                return 0
+            fi
+
+            warn "Docker CE mirror must be Aliyun or AzureChinaCloud."
+        done
+    fi
+
+    return 0
 }
 
 prompt_timezone() {
@@ -197,6 +257,17 @@ print_summary() {
     fi
     printf '  MySQL client: %s\n' "${INSTALL_MYSQL}" >/dev/tty
     printf '  Docker: %s\n' "${INSTALL_DOCKER}" >/dev/tty
+    if [ "${INSTALL_DOCKER}" = true ]; then
+        printf '    Docker region: %s\n' "${DOCKER_REGION}" >/dev/tty
+        if [ "${DOCKER_REGION}" = cn ]; then
+            printf '    Docker CE mirror: %s\n' "${DOCKER_INSTALL_MIRROR:-Aliyun}" >/dev/tty
+            if [ "${DOCKER_REGISTRY_MIRROR+x}" = x ]; then
+                printf '    Registry mirror: %s\n' "${DOCKER_REGISTRY_MIRROR}" >/dev/tty
+            else
+                printf '    Registry mirrors: mainland defaults\n' >/dev/tty
+            fi
+        fi
+    fi
     printf '  Nginx: %s\n' "${INSTALL_NGINX}" >/dev/tty
     printf '  Rclone: %s\n' "${INSTALL_RCLONE}" >/dev/tty
     printf '  Glow: %s\n' "${INSTALL_GLOW}" >/dev/tty
@@ -263,6 +334,9 @@ run_interactive_wizard() {
     INSTALL_MYSQL="${PROMPT_VALUE}"
     prompt_yes_no "Install Docker" "${INSTALL_DOCKER}"
     INSTALL_DOCKER="${PROMPT_VALUE}"
+    if [ "${INSTALL_DOCKER}" = true ]; then
+        prompt_docker_region
+    fi
     prompt_yes_no "Install Nginx" "${INSTALL_NGINX}"
     INSTALL_NGINX="${PROMPT_VALUE}"
     prompt_yes_no "Install Rclone" "${INSTALL_RCLONE}"
@@ -304,8 +378,35 @@ done
 
 MIRROR=$(printf '%s' "${MIRROR}" | sed 's#/$##g')
 TIMEZONE="${TIMEZONE:-Asia/Shanghai}"
+DOCKER_REGION="${DOCKER_REGION:-global}"
+DOCKER_INSTALL_MIRROR="${DOCKER_INSTALL_MIRROR:-}"
 if [ -z "${LET_MAIL}" ]; then
     LET_MAIL="webmaster@woai.ru"
+fi
+
+if ! is_valid_mirror "${MIRROR}"; then
+    err "Invalid mirror URL"
+    exit 1
+fi
+
+if ! is_valid_docker_region "${DOCKER_REGION}"; then
+    err "DOCKER_REGION must be global or cn"
+    exit 1
+fi
+
+if ! is_valid_docker_install_mirror "${DOCKER_INSTALL_MIRROR}"; then
+    err "DOCKER_INSTALL_MIRROR must be Aliyun or AzureChinaCloud"
+    exit 1
+fi
+
+if [ "${DOCKER_REGISTRY_MIRROR+x}" = x ] && ! is_valid_docker_registry_mirror "${DOCKER_REGISTRY_MIRROR}"; then
+    err "DOCKER_REGISTRY_MIRROR must be an http:// or https:// URL, or none"
+    exit 1
+fi
+
+if ! is_valid_timezone "${TIMEZONE}"; then
+    err "Invalid timezone: ${TIMEZONE}"
+    exit 1
 fi
 
 # 系统检测
@@ -319,16 +420,6 @@ fi
 
 if [ "${_SUPPORT}" = false ]; then
     err "Only support Debian/Ubuntu/Alpine"
-    exit 1
-fi
-
-if ! is_valid_mirror "${MIRROR}"; then
-    err "Invalid mirror URL"
-    exit 1
-fi
-
-if ! is_valid_timezone "${TIMEZONE}"; then
-    err "Invalid timezone: ${TIMEZONE}"
     exit 1
 fi
 
@@ -359,6 +450,11 @@ fi
 if [ "${INTERACTIVE}" = true ]; then
     run_interactive_wizard
     export SSHKEY NOT_INSTALL_SSH_KEY NOT_CHANGE_SSH_PORT
+fi
+
+export DOCKER_REGION DOCKER_INSTALL_MIRROR
+if [ "${DOCKER_REGISTRY_MIRROR+x}" = x ]; then
+    export DOCKER_REGISTRY_MIRROR
 fi
 
 chmod +x "${SCRIPT_DIR}"/scripts/install/*.sh
@@ -397,6 +493,7 @@ install_packages_separately() {
 if [ -n "${MIRROR}" ]; then
     # 使用sed在末尾添加斜杠
     MIRROR="${MIRROR}/"
+    export GH_MIRROR="${MIRROR}"
     if [ -f /data/.profile ]; then
         sed -i "s@^export GH_MIRROR=.*@export GH_MIRROR=${MIRROR}@" /data/.profile
     else

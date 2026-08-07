@@ -1,21 +1,16 @@
-#!/bin/sh
-# Docker 安装与日志轮转配置脚本
+#!/usr/bin/env sh
+# Install Docker and configure daemon defaults for Debian, Ubuntu, and Alpine.
 
-# ====================================
-# 引入通用函数库
-# ====================================
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 if [ -f "${SCRIPT_DIR}/../../lib/common.sh" ]; then
     . "${SCRIPT_DIR}/../../lib/common.sh"
 else
-    # 如果 common.sh 不可用，定义基本日志函数
-    info() { echo "[I] $*"; }
-    warn() { echo "[W] $*"; }
-    err() { echo "[E] $*"; }
-    suc() { echo "[S] $*"; }
+    info() { echo "[I] $*" >&2; }
+    warn() { echo "[W] $*" >&2; }
+    err() { echo "[E] $*" >&2; }
+    suc() { echo "[S] $*" >&2; }
 fi
 
-# 使用 curl 或 Alpine BusyBox wget 下载文件
 download_file() {
     DOWNLOAD_SOURCE_URL="${1}"
     DOWNLOAD_DESTINATION="${2}"
@@ -30,378 +25,259 @@ download_file() {
     fi
 }
 
-# ====================================
-# 环境变量与默认值
-# ====================================
-DOCKER_LOG_MAX_SIZE=${DOCKER_LOG_MAX_SIZE:-10m}
-DOCKER_LOG_MAX_FILE=${DOCKER_LOG_MAX_FILE:-3}
-DOCKER_LOG_DRIVER=${DOCKER_LOG_DRIVER:-json-file}
-DOCKER_DAEMON_JSON=${DOCKER_DAEMON_JSON:-/etc/docker/daemon.json}
-DOCKER_CONFIG_BACKUP=${DOCKER_CONFIG_BACKUP:-/etc/docker/daemon.json.bak}
+load_docker_daemon_library() {
+    if [ -f "${SCRIPT_DIR}/../../lib/docker_daemon.sh" ]; then
+        . "${SCRIPT_DIR}/../../lib/docker_daemon.sh"
+        return $?
+    fi
 
-# ====================================
-# 备份现有配置
-# ====================================
-backup_daemon_config() {
-    if [ -f "${DOCKER_DAEMON_JSON}" ]; then
-        info "Backing up daemon.json to ${DOCKER_CONFIG_BACKUP}"
-        if cp -f "${DOCKER_DAEMON_JSON}" "${DOCKER_CONFIG_BACKUP}"; then
+    DOCKER_DAEMON_LIBRARY=$(mktemp) || return 1
+    DOCKER_LIBRARY_URL=${DOCKER_LIBRARY_URL:-${GH_MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/lib/docker_daemon.sh}
+    info "Downloading Docker daemon configuration library"
+    if ! download_file "${DOCKER_LIBRARY_URL}" "${DOCKER_DAEMON_LIBRARY}"; then
+        rm -f "${DOCKER_DAEMON_LIBRARY}"
+        err "Failed to download Docker daemon configuration library"
+        return 1
+    fi
+
+    . "${DOCKER_DAEMON_LIBRARY}"
+}
+
+DOCKER_DAEMON_LIBRARY=""
+trap 'rm -f "${DOCKER_DAEMON_LIBRARY}"' EXIT HUP INT TERM
+
+if ! load_docker_daemon_library; then
+    exit 1
+fi
+
+DOCKER_INSTALL_MIRROR=${DOCKER_INSTALL_MIRROR:-}
+DOCKER_INSTALLER_URL=${DOCKER_INSTALLER_URL:-https://get.docker.com}
+
+validate_install_mirror() {
+    case "${DOCKER_INSTALL_MIRROR}" in
+        ""|Aliyun|AzureChinaCloud)
             return 0
-        else
-            err "Failed to backup daemon.json"
+            ;;
+        *)
+            err "DOCKER_INSTALL_MIRROR must be Aliyun or AzureChinaCloud"
             return 1
-        fi
-    else
-        info "No existing daemon.json, no backup needed"
-        return 0
-    fi
+            ;;
+    esac
 }
 
-# ====================================
-# 创建新的 daemon.json 配置文件
-# ====================================
-create_daemon_config() {
-    info "Creating new daemon.json with log rotation config"
-
-    # 确保 /etc/docker 目录存在
-    DOCKER_DIR=$(dirname "${DOCKER_DAEMON_JSON}")
-    if [ ! -d "${DOCKER_DIR}" ]; then
-        info "Creating directory ${DOCKER_DIR}"
-        mkdir -p "${DOCKER_DIR}" || {
-            err "Failed to create ${DOCKER_DIR}"
-            return 1
-        }
-    fi
-
-    # 写入配置文件
-    cat > "${DOCKER_DAEMON_JSON}" <<EOF
-{
-  "log-driver": "${DOCKER_LOG_DRIVER}",
-  "log-opts": {
-    "max-size": "${DOCKER_LOG_MAX_SIZE}",
-    "max-file": "${DOCKER_LOG_MAX_FILE}"
-  }
-}
-EOF
-
-    if [ $? -eq 0 ]; then
-        suc "Created daemon.json successfully"
-        return 0
-    else
-        err "Failed to create daemon.json"
-        return 1
-    fi
+get_cn_download_url() {
+    case "${DOCKER_INSTALL_MIRROR}" in
+        ""|Aliyun)
+            printf '%s' 'https://mirrors.aliyun.com/docker-ce'
+            ;;
+        AzureChinaCloud)
+            printf '%s' 'https://mirror.azure.cn/docker-ce'
+            ;;
+    esac
 }
 
-# ====================================
-# 检测并更新 log-driver 配置
-# ====================================
-update_log_driver() {
-    if grep -q '"log-driver"' "${DOCKER_DAEMON_JSON}"; then
-        info "Updating existing log-driver configuration"
-        # 使用 sed 更新 log-driver 值
-        sed -i 's/"log-driver":[[:space:]]*"[^"]*"/"log-driver": "'"${DOCKER_LOG_DRIVER}"'"/' "${DOCKER_DAEMON_JSON}"
-        return $?
-    else
-        info "Adding new log-driver configuration"
-        # 在最后一个 } 前添加 log-driver 配置
-        sed -i 's/}$/,\n  "log-driver": "'"${DOCKER_LOG_DRIVER}"'"\n}/' "${DOCKER_DAEMON_JSON}"
-        return $?
-    fi
-}
+install_docker_from_official_script() {
+    DOCKER_INSTALLER=$(mktemp) || return 1
 
-# ====================================
-# 检测并更新 log-opts 配置
-# ====================================
-update_log_opts() {
-    if grep -q '"log-opts"' "${DOCKER_DAEMON_JSON}"; then
-        info "Updating existing log-opts configuration"
-
-        # 更新 max-size
-        if grep -q '"max-size"' "${DOCKER_DAEMON_JSON}"; then
-            sed -i 's/"max-size":[[:space:]]*"[^"]*"/"max-size": "'"${DOCKER_LOG_MAX_SIZE}"'"/' "${DOCKER_DAEMON_JSON}"
-        else
-            # 在 log-opts 对象开头添加 max-size
-            sed -i '/"log-opts":[[:space:]]*{/a\    "max-size": "'"${DOCKER_LOG_MAX_SIZE}"'",' "${DOCKER_DAEMON_JSON}"
-        fi
-
-        # 更新 max-file
-        if grep -q '"max-file"' "${DOCKER_DAEMON_JSON}"; then
-            sed -i 's/"max-file":[[:space:]]*"[0-9]*"/"max-file": "'"${DOCKER_LOG_MAX_FILE}"'"/' "${DOCKER_DAEMON_JSON}"
-        else
-            # 在 max-size 后添加 max-file
-            sed -i 's/"max-size":[[:space:]]*"[^"]*"/&\n    "max-file": "'"${DOCKER_LOG_MAX_FILE}"'"/' "${DOCKER_DAEMON_JSON}"
-        fi
-
-        return $?
-    else
-        info "Adding new log-opts configuration"
-        # 添加完整的 log-opts 对象
-        sed -i 's/}$/,\n  "log-opts": {\n    "max-size": "'"${DOCKER_LOG_MAX_SIZE}"'",\n    "max-file": "'"${DOCKER_LOG_MAX_FILE}"'"\n  }\n}/' "${DOCKER_DAEMON_JSON}"
-        return $?
-    fi
-}
-
-# ====================================
-# 合并日志配置到现有 daemon.json
-# ====================================
-merge_log_config() {
-    info "Merging log configuration into existing daemon.json"
-
-    # 更新 log-driver
-    if ! update_log_driver; then
-        err "Failed to update log-driver"
+    info "Downloading Docker installer from ${DOCKER_INSTALLER_URL}"
+    if ! download_file "${DOCKER_INSTALLER_URL}" "${DOCKER_INSTALLER}"; then
+        rm -f "${DOCKER_INSTALLER}"
         return 1
     fi
 
-    # 更新 log-opts
-    if ! update_log_opts; then
-        err "Failed to update log-opts"
+    if [ -n "${DOCKER_INSTALL_MIRROR}" ]; then
+        sh "${DOCKER_INSTALLER}" --mirror "${DOCKER_INSTALL_MIRROR}"
+    else
+        sh "${DOCKER_INSTALLER}"
+    fi
+    DOCKER_INSTALL_RESULT=$?
+    rm -f "${DOCKER_INSTALLER}"
+    return "${DOCKER_INSTALL_RESULT}"
+}
+
+install_docker_from_cn_apt_repo() {
+    DOCKER_OS_RELEASE_FILE=${DOCKER_OS_RELEASE_FILE:-/etc/os-release}
+    if [ ! -r "${DOCKER_OS_RELEASE_FILE}" ]; then
+        err "Cannot determine Linux distribution"
         return 1
     fi
 
-    suc "Log configuration merged successfully"
-    return 0
-}
+    . "${DOCKER_OS_RELEASE_FILE}"
+    case "${ID}" in
+        debian|ubuntu)
+            ;;
+        *)
+            err "Unsupported APT distribution: ${ID}"
+            return 1
+            ;;
+    esac
 
-# ====================================
-# JSON 语法验证
-# ====================================
-validate_json_syntax() {
-    # 简单的 JSON 语法检查
-    # 1. 检查括号匹配
-    OPEN_BRACES=$(grep -o '{' "${DOCKER_DAEMON_JSON}" | wc -l)
-    CLOSE_BRACES=$(grep -o '}' "${DOCKER_DAEMON_JSON}" | wc -l)
-
-    if [ "${OPEN_BRACES}" -ne "${CLOSE_BRACES}" ]; then
-        err "JSON syntax error: unmatched braces"
+    DOCKER_DISTRO="${ID}"
+    DOCKER_CODENAME="${VERSION_CODENAME:-${UBUNTU_CODENAME}}"
+    if [ -z "${DOCKER_CODENAME}" ]; then
+        err "Cannot determine distribution codename"
         return 1
     fi
 
-    # 2. 如果有 python3，使用 json.tool 验证
-    if command -v python3 >/dev/null 2>&1; then
-        if ! python3 -m json.tool "${DOCKER_DAEMON_JSON}" >/dev/null 2>&1; then
-            err "JSON syntax error: validation failed"
-            return 1
-        fi
+    DOCKER_DOWNLOAD_URL=$(get_cn_download_url)
+    DOCKER_KEYRING_DIR=${DOCKER_APT_KEYRING_DIR:-/etc/apt/keyrings}
+    DOCKER_KEYRING_FILE=${DOCKER_KEYRING_DIR}/docker.asc
+    DOCKER_APT_SOURCE=${DOCKER_APT_SOURCE_FILE:-/etc/apt/sources.list.d/docker.list}
+
+    info "Installing Docker from ${DOCKER_DOWNLOAD_URL}"
+    if ! apt-get update; then
+        return 1
+    fi
+    if ! apt-get -y install ca-certificates curl; then
+        return 1
+    fi
+    if ! install -m 0755 -d "${DOCKER_KEYRING_DIR}"; then
+        return 1
+    fi
+    if ! download_file "${DOCKER_DOWNLOAD_URL}/linux/${DOCKER_DISTRO}/gpg" "${DOCKER_KEYRING_FILE}"; then
+        return 1
+    fi
+    if ! chmod a+r "${DOCKER_KEYRING_FILE}"; then
+        return 1
     fi
 
-    # 3. 如果有 jq，使用 jq 验证
-    if command -v jq >/dev/null 2>&1; then
-        if ! jq . "${DOCKER_DAEMON_JSON}" >/dev/null 2>&1; then
-            err "JSON syntax error: validation failed"
-            return 1
-        fi
+    printf '%s\n' \
+        "deb [arch=$(dpkg --print-architecture) signed-by=${DOCKER_KEYRING_FILE}] ${DOCKER_DOWNLOAD_URL}/linux/${DOCKER_DISTRO} ${DOCKER_CODENAME} stable" \
+        > "${DOCKER_APT_SOURCE}"
+    if [ $? -ne 0 ]; then
+        err "Failed to write ${DOCKER_APT_SOURCE}"
+        return 1
     fi
 
-    info "JSON syntax validation passed"
-    return 0
+    if ! apt-get update; then
+        return 1
+    fi
+
+    if [ -z "${NOT_INSTALL_DOCKER_COMPOSE}" ]; then
+        apt-get -y install \
+            docker-ce \
+            docker-ce-cli \
+            containerd.io \
+            docker-buildx-plugin \
+            docker-compose-plugin
+        return $?
+    fi
+
+    apt-get -y install \
+        docker-ce \
+        docker-ce-cli \
+        containerd.io \
+        docker-buildx-plugin
 }
 
-# ====================================
-# 重启 Docker 服务
-# ====================================
-restart_docker_service() {
-    info "Restarting Docker service"
+install_docker_from_apk() {
+    info "Installing Docker from Alpine packages"
+    if ! apk add --no-cache docker; then
+        return 1
+    fi
 
-    # 尝试使用 systemctl
+    if [ -z "${NOT_INSTALL_DOCKER_COMPOSE}" ]; then
+        if ! apk add --no-cache docker-cli-compose; then
+            warn "docker-cli-compose is unavailable; trying docker-compose"
+            apk add --no-cache docker-compose
+        fi
+    fi
+}
+
+enable_and_start_docker() {
     if command -v systemctl >/dev/null 2>&1; then
-        if systemctl list-unit-files docker.service >/dev/null 2>&1 || systemctl status docker >/dev/null 2>&1; then
-            if systemctl restart docker; then
-                suc "Docker service restarted (systemctl docker)"
-                return 0
-            fi
-        fi
-
-        if systemctl list-unit-files docker.service >/dev/null 2>&1; then
-            if systemctl restart docker.service; then
-                suc "Docker service restarted (systemctl docker.service)"
-                return 0
-            fi
-        fi
-
-        err "Failed to restart Docker with systemctl"
-        return 1
+        systemctl enable --now docker && return 0
+        systemctl enable --now docker.service && return 0
     fi
 
-    # 尝试使用 service
+    if command -v rc-update >/dev/null 2>&1 && command -v rc-service >/dev/null 2>&1; then
+        rc-update add docker boot && rc-service docker start && return 0
+    fi
+
     if command -v service >/dev/null 2>&1; then
-        if service docker restart; then
-            suc "Docker service restarted (service)"
-            return 0
-        else
-            err "Failed to restart Docker with service"
-            return 1
-        fi
+        service docker start && return 0
     fi
 
-    # 尝试使用 init.d 脚本（Alpine 等）
-    if [ -f /etc/init.d/docker ]; then
-        if /etc/init.d/docker restart; then
-            suc "Docker service restarted (init.d)"
-            return 0
-        else
-            err "Failed to restart Docker with init.d"
-            return 1
-        fi
-    fi
-
-    warn "Unable to restart Docker service (no supported method found)"
+    warn "Docker was installed but could not be started automatically"
     return 1
 }
 
-# ====================================
-# 验证 Docker 服务状态
-# ====================================
-verify_docker_service() {
-    if ! docker info >/dev/null 2>&1; then
-        err "Docker service is not running properly"
-        return 1
+ensure_json_parser() {
+    if command -v jq >/dev/null 2>&1 || command -v python3 >/dev/null 2>&1; then
+        return 0
     fi
 
-    suc "Docker service is running"
-    return 0
-}
-
-# ====================================
-# 回滚配置
-# ====================================
-rollback_daemon_config() {
-    if [ -f "${DOCKER_CONFIG_BACKUP}" ]; then
-        warn "Rolling back daemon.json from backup"
-        mv -f "${DOCKER_CONFIG_BACKUP}" "${DOCKER_DAEMON_JSON}"
-
-        info "Restarting Docker service after rollback"
-        restart_docker_service
-
+    info "Installing jq for Docker daemon configuration"
+    if command -v apt-get >/dev/null 2>&1; then
+        apt-get -y install jq
         return $?
-    else
-        warn "No backup file found, cannot rollback"
-        return 1
     fi
+
+    if command -v apk >/dev/null 2>&1; then
+        apk add --no-cache jq
+        return $?
+    fi
+
+    return 1
 }
 
-# ====================================
-# 主配置函数
-# ====================================
-configure_docker_logs() {
-    info "Starting Docker log rotation configuration"
-
-    # 1. 备份现有配置
-    if ! backup_daemon_config; then
-        err "Backup failed, aborting configuration"
+install_docker() {
+    if ! validate_install_mirror; then
         return 1
     fi
 
-    # 2. 检测 daemon.json 是否存在
-    if [ ! -f "${DOCKER_DAEMON_JSON}" ]; then
-        # 不存在：创建新配置
-        if ! create_daemon_config; then
-            err "Failed to create daemon.json"
-            rollback_daemon_config
-            return 1
-        fi
-    else
-        # 存在：合并配置
-        if ! merge_log_config; then
-            err "Failed to merge log configuration"
-            rollback_daemon_config
-            return 1
-        fi
+    if command -v apk >/dev/null 2>&1; then
+        install_docker_from_apk
+        return $?
     fi
 
-    # 3. 验证 JSON 语法
-    if ! validate_json_syntax; then
-        err "JSON validation failed"
-        rollback_daemon_config
+    if ! command -v apt-get >/dev/null 2>&1; then
+        err "Only Debian, Ubuntu, and Alpine are supported"
         return 1
     fi
 
-    # 4. 重启 Docker 服务
-    if ! restart_docker_service; then
-        err "Failed to restart Docker service"
-        rollback_daemon_config
-        return 1
+    if [ "${DOCKER_REGION}" = cn ]; then
+        install_docker_from_cn_apt_repo
+        return $?
     fi
 
-    # 5. 验证服务状态
-    if ! verify_docker_service; then
-        err "Docker service verification failed"
-        rollback_daemon_config
-        return 1
-    fi
-
-    # 6. 清理备份文件
-    if [ -f "${DOCKER_CONFIG_BACKUP}" ]; then
-        info "Removing backup file"
-        rm -f "${DOCKER_CONFIG_BACKUP}"
-    fi
-
-    suc "Docker log rotation configured successfully"
-    suc "  - Log driver: ${DOCKER_LOG_DRIVER}"
-    suc "  - Max size: ${DOCKER_LOG_MAX_SIZE}"
-    suc "  - Max files: ${DOCKER_LOG_MAX_FILE}"
-
-    return 0
+    install_docker_from_official_script
 }
 
-# ====================================
-# 主流程
-# ====================================
-
-# 1. 安装 Docker
-info "Installing Docker..."
-DOCKER_INSTALLER=$(mktemp)
-if ! download_file "https://get.docker.com" "${DOCKER_INSTALLER}"; then
-    rm -f "${DOCKER_INSTALLER}"
+info "Installing Docker"
+if ! install_docker; then
+    err "Docker installation failed"
     exit 1
 fi
-if ! bash "${DOCKER_INSTALLER}"; then
-    rm -f "${DOCKER_INSTALLER}"
-    exit 1
-fi
-rm -f "${DOCKER_INSTALLER}"
 
-# 2. 安装 docker-compose（如果需要）
+if ! enable_and_start_docker; then
+    warn "Continue without automatic Docker service startup"
+fi
+
 if [ -z "${NOT_INSTALL_DOCKER_COMPOSE}" ]; then
-    info "Checking Docker Compose availability..."
-    if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
-        suc "Docker Compose already available via docker compose"
-    elif [ -n "$(command -v apk)" ]; then
-        info "Installing docker-compose..."
-        apk add --update --no-cache docker-compose
+    if docker compose version >/dev/null 2>&1; then
+        suc "Docker Compose is available"
     else
-        warn "docker compose is unavailable after Docker installation"
-        warn "Skipping separate docker-compose package install to avoid conflicts with Docker official packages"
+        warn "Docker Compose is unavailable after installation"
     fi
 fi
 
-# 3. 配置 Docker 日志轮转（如果未禁用）
-if [ "${DOCKER_DISABLE_LOG_CONFIG}" != "true" ]; then
-    # 等待 Docker 安装完成
+if [ "${DOCKER_DISABLE_LOG_CONFIG}" != true ]; then
     sleep 2
-
-    # 检查 Docker 是否安装成功
-    if command -v docker >/dev/null 2>&1; then
-        if configure_docker_logs; then
-            suc "Docker installation and log configuration completed"
-        else
-            warn "Docker installed but log configuration failed, continuing anyway..."
-        fi
+    if ensure_json_parser && configure_docker_daemon; then
+        suc "Docker installation and daemon configuration completed"
     else
-        warn "Docker installation may have failed, skipping log configuration"
+        warn "Docker installed but daemon configuration failed"
     fi
 else
-    info "Docker log configuration disabled by DOCKER_DISABLE_LOG_CONFIG"
+    info "Docker daemon configuration disabled by DOCKER_DISABLE_LOG_CONFIG"
 fi
 
-# 4. 配置 Docker 端口白名单（如果脚本存在）
-if command -v docker >/dev/null 2>&1; then
-    if [ -f "${SCRIPT_DIR}/docker_iptables.sh" ]; then
-        if "${SCRIPT_DIR}/docker_iptables.sh"; then
-            suc "Docker port whitelist configuration completed"
-        else
-            warn "Docker installed but port whitelist configuration failed, continuing anyway..."
-        fi
+DOCKER_IPTABLES_SCRIPT=${SCRIPT_DIR}/../configure/docker_iptables.sh
+if command -v docker >/dev/null 2>&1 && [ -f "${DOCKER_IPTABLES_SCRIPT}" ]; then
+    if "${DOCKER_IPTABLES_SCRIPT}"; then
+        suc "Docker port whitelist configuration completed"
+    else
+        warn "Docker installed but port whitelist configuration failed"
     fi
 fi
