@@ -14,6 +14,7 @@ VPSReady 是一套用于 Debian/Ubuntu/Alpine Linux 的 VPS 初始化脚本集�
 - **SSL 证书**: 集成 acme.sh 自动申请 Let's Encrypt 证书
 - **BBR 优化**: 自动启用 TCP BBR 拥塞控制算法
 - **系统优化**: 安装常用工具包、创建系统用户、配置环境
+- **Node.js Agent CLI**: 可选安装 Codex CLI 与 Claude Code CLI
 
 <!-- AUTO:tech-stack -->
 ## 技术栈
@@ -80,7 +81,9 @@ chmod +x ./init.sh
 
 ### 交互式初始化
 
-在已连接终端的 VPS 上执行 `./init.sh -i` 会启动初始化向导。向导会依次配置时区、GitHub 镜像、SSH 加固、Let's Encrypt 邮箱，以及 MySQL 客户端、Docker、Web 服务器、Rclone、Glow、mise/Node.js、BBR 与 acme.sh。Web 服务器可选择 `nginx`、`caddy` 或 `none`，每次初始化最多安装一个。
+在已连接终端的 VPS 上执行 `./init.sh -i` 会启动初始化向导。向导会依次配置时区、GitHub 镜像、SSH 加固、Let's Encrypt 邮箱，以及 MySQL 客户端、Docker、Web 服务器、Rclone、Glow、mise/Node.js、Codex CLI、Claude Code CLI、BBR 与 acme.sh。Web 服务器可选择 `nginx`、`caddy` 或 `none`，每次初始化最多安装一个。
+
+只有选择安装 mise/Node.js LTS 后，向导才会分别询问是否安装 Codex CLI 和 Claude Code CLI；两项可以独立选择，默认均为安装。每个 CLI 随后可选输入 API Base URL；只有输入 Base URL 后才会要求输入隐藏的 token，且两者齐全时才会保存 API 配置。CLI 通过 mise 提供的 Node.js/npm 全局安装，npm registry 默认使用 npmmirror。
 
 现有环境变量会显示为默认值，直接按 Enter 保留该值。向导不会额外生成交互配置文件；时区、SSH、镜像和软件安装等既有流程本来会修改的系统设置，仍会按确认结果执行。执行前会展示汇总，必须确认后才会开始修改系统。SSH 加固默认启用，包含公钥配置、禁用密码登录和将端口改为 `33022` 的选项。
 
@@ -137,6 +140,29 @@ LET_MAIL=your@email.com ./init.sh
 MIRROR=https://ghmirror.pp.ua ./init.sh
 ```
 
+### 使用 npm 镜像
+
+Codex CLI 和 Claude Code CLI 默认从 npmmirror 的 npm registry（`https://registry.npmmirror.com`）安装。可通过 `NPM_REGISTRY` 覆盖为私有 registry 或 npm 官方源：
+
+```bash
+NPM_REGISTRY=https://registry.npmjs.org ./init.sh
+NPM_REGISTRY=https://npm.example.com sh scripts/install/codex.sh
+```
+
+### 配置 Agent API
+
+交互向导中可以分别配置 Codex 与 Claude Code 的 API endpoint。Base URL 留空时不会询问 token；token 留空时也不会保存配置。非交互模式可使用以下变量：
+
+| CLI | Base URL | Token | 保存方式 |
+|-----|----------|-------|----------|
+| Codex | `CODEX_BASE_URL` | `CODEX_TOKEN` | 写入 `~/.codex/config.toml`，再通过 `codex login --with-api-key` 保存 token。 |
+| Claude Code | `CLAUDE_BASE_URL` | `CLAUDE_TOKEN` | 写入仅当前用户可读的 `~/.config/vpsready/claude_code.env`，并由 `~/.profile` 与 `~/.bashrc` 加载。 |
+
+```bash
+CODEX_BASE_URL=https://api.example.com/v1 CODEX_TOKEN=your-token ./init.sh
+CLAUDE_BASE_URL=https://claude.example.com CLAUDE_TOKEN=your-token ./init.sh
+```
+
 ### 多参数组合
 
 ```bash
@@ -178,7 +204,7 @@ DOCKER_REGION=cn DOCKER_REGISTRY_MIRROR=https://registry.example.com ./init.sh
 DOCKER_REGION=cn DOCKER_REGISTRY_MIRROR=none ./init.sh
 ```
 
-`MIRROR` 仍只用于 GitHub 资源前缀。若初始化脚本本身需要通过 GitHub 镜像获取，请单独设置 `MIRROR`。
+`MIRROR` 仍只用于 GitHub 资源前缀；npm 包通过 `NPM_REGISTRY` 获取。若初始化脚本本身需要通过 GitHub 镜像获取，请单独设置 `MIRROR`。
 
 ### Docker 日志轮转配置
 
@@ -317,6 +343,8 @@ chmod +x init.sh scripts/install/*.sh scripts/configure/*.sh scripts/tools/*.sh
 | Docker | `sh scripts/install/docker.sh` | `DOCKER_REGION`、`DOCKER_INSTALL_MIRROR`、`DOCKER_REGISTRY_MIRROR`、`DOCKER_*` |
 | Glow | `sh scripts/install/glow.sh` | `GLOW_VERSION`、`GLOW_INSTALL_DIR`、`GLOW_MIRROR` |
 | mise + Node.js LTS | `sh scripts/install/mise.sh` | `MISE_INSTALL_URL` |
+| Codex CLI | `sh scripts/install/codex.sh` | `NPM_REGISTRY`、`CODEX_BASE_URL`、`CODEX_TOKEN`；默认 npmmirror；安装 `@openai/codex` |
+| Claude Code CLI | `sh scripts/install/claude_code.sh` | `NPM_REGISTRY`、`CLAUDE_BASE_URL`、`CLAUDE_TOKEN`；默认 npmmirror；安装 `@anthropic-ai/claude-code` |
 | tcping | `sh scripts/install/tcping.sh` | `TCPING_VERSION`、`TCPING_INSTALL_DIR`、`TCPING_FORCE_REINSTALL` |
 | Nginx | `sh scripts/install/nginx.sh` | 使用 `/data/web` 配置 |
 
@@ -328,6 +356,8 @@ curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/in
 curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/docker.sh" | sh
 curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/glow.sh" | sh
 curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/mise.sh" | sh
+curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/codex.sh" | sh
+curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/claude_code.sh" | sh
 curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/nginx.sh" | sh
 curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/tcping.sh" | sh
 ```
@@ -343,6 +373,13 @@ mise use node@20
 
 # 临时切换当前 shell 的版本
 mise shell node@20
+```
+
+安装 Agent CLI（需先完成 mise 与 Node.js LTS 安装）：
+
+```bash
+sh scripts/install/codex.sh
+sh scripts/install/claude_code.sh
 ```
 
 旧版 `nvm.sh` 仍保留用于兼容，但 `init.sh` 不再自动调用 NVM。

@@ -12,6 +12,8 @@ CONFIGURE_SSH=true
 INSTALL_RCLONE=true
 INSTALL_GLOW=true
 INSTALL_MISE=true
+INSTALL_CODEX=true
+INSTALL_CLAUDE_CODE=true
 ENABLE_BBR=true
 INSTALL_ACME=true
 
@@ -83,6 +85,34 @@ prompt_value() {
     fi
 }
 
+prompt_secret() {
+    PROMPT_LABEL="${1}"
+
+    printf '%s: ' "${PROMPT_LABEL}" >/dev/tty
+    if ! PROMPT_TTY_STATE=$(stty -g </dev/tty); then
+        err "Unable to read terminal settings."
+        exit 1
+    fi
+
+    if ! stty -echo </dev/tty; then
+        err "Unable to hide token input."
+        exit 1
+    fi
+
+    trap 'stty "${PROMPT_TTY_STATE}" </dev/tty 2>/dev/null; printf "\n" >/dev/tty; exit 130' INT TERM HUP
+    if ! IFS= read -r PROMPT_INPUT </dev/tty; then
+        stty "${PROMPT_TTY_STATE}" </dev/tty 2>/dev/null || true
+        trap - INT TERM HUP
+        warn "Interactive input closed. Initialization canceled."
+        exit 1
+    fi
+    stty "${PROMPT_TTY_STATE}" </dev/tty 2>/dev/null || true
+    trap - INT TERM HUP
+    printf '\n' >/dev/tty
+
+    PROMPT_VALUE="${PROMPT_INPUT}"
+}
+
 is_valid_mirror() {
     case "${1}" in
         "")
@@ -102,6 +132,17 @@ is_valid_mirror() {
     esac
 
     return 0
+}
+
+is_valid_agent_token() {
+    case "${1}" in
+        ""|*[[:space:]]*)
+            return 1
+            ;;
+        *)
+            return 0
+            ;;
+    esac
 }
 
 is_valid_docker_region() {
@@ -194,6 +235,54 @@ prompt_mirror() {
     done
 }
 
+prompt_npm_registry() {
+    while :; do
+        prompt_value "npm registry URL" "${NPM_REGISTRY}"
+        if [ -n "${PROMPT_VALUE}" ] && is_valid_mirror "${PROMPT_VALUE}"; then
+            NPM_REGISTRY="${PROMPT_VALUE}"
+            return 0
+        fi
+
+        warn "Enter an http:// or https:// npm registry URL."
+    done
+}
+
+prompt_agent_configuration() {
+    AGENT_LABEL="${1}"
+    AGENT_BASE_URL_DEFAULT="${2}"
+    CONFIGURED_AGENT_BASE_URL=""
+    CONFIGURED_AGENT_TOKEN=""
+
+    while :; do
+        prompt_value "${AGENT_LABEL} API base URL (blank skips configuration)" "${AGENT_BASE_URL_DEFAULT}"
+        if [ -z "${PROMPT_VALUE}" ]; then
+            return 0
+        fi
+
+        if is_valid_mirror "${PROMPT_VALUE}"; then
+            CONFIGURED_AGENT_BASE_URL="${PROMPT_VALUE}"
+            break
+        fi
+
+        warn "Enter an http:// or https:// API base URL, or leave it blank."
+    done
+
+    while :; do
+        prompt_secret "${AGENT_LABEL} API token (blank skips configuration)"
+        if [ -z "${PROMPT_VALUE}" ]; then
+            CONFIGURED_AGENT_BASE_URL=""
+            return 0
+        fi
+
+        if is_valid_agent_token "${PROMPT_VALUE}"; then
+            CONFIGURED_AGENT_TOKEN="${PROMPT_VALUE}"
+            return 0
+        fi
+
+        warn "API token cannot contain whitespace."
+    done
+}
+
 prompt_docker_region() {
     while :; do
         prompt_value "Docker region (global/cn)" "${DOCKER_REGION}"
@@ -268,10 +357,43 @@ prompt_ssh_key() {
     done
 }
 
+prompt_node_agent_clis() {
+    if [ "${INSTALL_MISE}" = true ]; then
+        prompt_yes_no "Install Codex CLI" "${INSTALL_CODEX}"
+        INSTALL_CODEX="${PROMPT_VALUE}"
+        if [ "${INSTALL_CODEX}" = true ]; then
+            prompt_agent_configuration "Codex" "${CODEX_BASE_URL}"
+            CODEX_BASE_URL="${CONFIGURED_AGENT_BASE_URL}"
+            CODEX_TOKEN="${CONFIGURED_AGENT_TOKEN}"
+        else
+            CODEX_BASE_URL=""
+            CODEX_TOKEN=""
+        fi
+        prompt_yes_no "Install Claude Code CLI" "${INSTALL_CLAUDE_CODE}"
+        INSTALL_CLAUDE_CODE="${PROMPT_VALUE}"
+        if [ "${INSTALL_CLAUDE_CODE}" = true ]; then
+            prompt_agent_configuration "Claude Code" "${CLAUDE_BASE_URL}"
+            CLAUDE_BASE_URL="${CONFIGURED_AGENT_BASE_URL}"
+            CLAUDE_TOKEN="${CONFIGURED_AGENT_TOKEN}"
+        else
+            CLAUDE_BASE_URL=""
+            CLAUDE_TOKEN=""
+        fi
+    else
+        INSTALL_CODEX=false
+        INSTALL_CLAUDE_CODE=false
+        CODEX_BASE_URL=""
+        CODEX_TOKEN=""
+        CLAUDE_BASE_URL=""
+        CLAUDE_TOKEN=""
+    fi
+}
+
 print_summary() {
     printf '\nInitialization summary:\n' >/dev/tty
     printf '  Timezone: %s\n' "${TIMEZONE}" >/dev/tty
     printf '  GitHub mirror: %s\n' "${MIRROR:-direct GitHub}" >/dev/tty
+    printf '  npm registry: %s\n' "${NPM_REGISTRY}" >/dev/tty
     printf '  SSH hardening: %s\n' "${CONFIGURE_SSH}" >/dev/tty
     if [ "${CONFIGURE_SSH}" = true ]; then
         printf '    Installs/updates a public key, disables password login, and can set port 33022.\n' >/dev/tty
@@ -295,6 +417,18 @@ print_summary() {
     printf '  Rclone: %s\n' "${INSTALL_RCLONE}" >/dev/tty
     printf '  Glow: %s\n' "${INSTALL_GLOW}" >/dev/tty
     printf '  mise and Node.js LTS: %s\n' "${INSTALL_MISE}" >/dev/tty
+    printf '    Codex CLI: %s\n' "${INSTALL_CODEX}" >/dev/tty
+    if [ -n "${CODEX_BASE_URL}" ] && [ -n "${CODEX_TOKEN}" ]; then
+        printf '      API configuration: configured\n' >/dev/tty
+    else
+        printf '      API configuration: skipped\n' >/dev/tty
+    fi
+    printf '    Claude Code CLI: %s\n' "${INSTALL_CLAUDE_CODE}" >/dev/tty
+    if [ -n "${CLAUDE_BASE_URL}" ] && [ -n "${CLAUDE_TOKEN}" ]; then
+        printf '      API configuration: configured\n' >/dev/tty
+    else
+        printf '      API configuration: skipped\n' >/dev/tty
+    fi
     printf '  BBR: %s\n' "${ENABLE_BBR}" >/dev/tty
     printf '  acme.sh: %s\n\n' "${INSTALL_ACME}" >/dev/tty
 }
@@ -308,6 +442,7 @@ run_interactive_wizard() {
     printf 'VPSReady interactive initialization\n\n' >/dev/tty
     prompt_timezone
     prompt_mirror
+    prompt_npm_registry
 
     printf '%s\n' \
         'SSH hardening installs or updates a public key, disables password login, and can set port 33022.' \
@@ -367,6 +502,7 @@ run_interactive_wizard() {
     INSTALL_GLOW="${PROMPT_VALUE}"
     prompt_yes_no "Install mise and Node.js LTS" "${INSTALL_MISE}"
     INSTALL_MISE="${PROMPT_VALUE}"
+    prompt_node_agent_clis
     prompt_yes_no "Enable BBR when supported" "${ENABLE_BBR}"
     ENABLE_BBR="${PROMPT_VALUE}"
     prompt_yes_no "Install acme.sh" "${INSTALL_ACME}"
@@ -399,6 +535,12 @@ while [ "$#" -gt 0 ]; do
 done
 
 MIRROR=$(printf '%s' "${MIRROR}" | sed 's#/$##g')
+NPM_REGISTRY="${NPM_REGISTRY:-https://registry.npmmirror.com}"
+NPM_REGISTRY=$(printf '%s' "${NPM_REGISTRY}" | sed 's#/$##g')
+CODEX_BASE_URL="${CODEX_BASE_URL:-}"
+CODEX_TOKEN="${CODEX_TOKEN:-}"
+CLAUDE_BASE_URL="${CLAUDE_BASE_URL:-}"
+CLAUDE_TOKEN="${CLAUDE_TOKEN:-}"
 TIMEZONE="${TIMEZONE:-Asia/Shanghai}"
 DOCKER_REGION="${DOCKER_REGION:-global}"
 DOCKER_INSTALL_MIRROR="${DOCKER_INSTALL_MIRROR:-}"
@@ -414,6 +556,31 @@ fi
 
 if ! is_valid_mirror "${MIRROR}"; then
     err "Invalid mirror URL"
+    exit 1
+fi
+
+if ! is_valid_mirror "${NPM_REGISTRY}"; then
+    err "NPM_REGISTRY must be an http:// or https:// URL"
+    exit 1
+fi
+
+if [ -z "${CODEX_BASE_URL}" ]; then
+    CODEX_TOKEN=""
+elif ! is_valid_mirror "${CODEX_BASE_URL}"; then
+    err "CODEX_BASE_URL must be an http:// or https:// URL"
+    exit 1
+elif [ -n "${CODEX_TOKEN}" ] && ! is_valid_agent_token "${CODEX_TOKEN}"; then
+    err "CODEX_TOKEN cannot be empty or contain whitespace"
+    exit 1
+fi
+
+if [ -z "${CLAUDE_BASE_URL}" ]; then
+    CLAUDE_TOKEN=""
+elif ! is_valid_mirror "${CLAUDE_BASE_URL}"; then
+    err "CLAUDE_BASE_URL must be an http:// or https:// URL"
+    exit 1
+elif [ -n "${CLAUDE_TOKEN}" ] && ! is_valid_agent_token "${CLAUDE_TOKEN}"; then
+    err "CLAUDE_TOKEN cannot be empty or contain whitespace"
     exit 1
 fi
 
@@ -485,6 +652,8 @@ if [ "${INTERACTIVE}" = true ]; then
 fi
 
 export DOCKER_REGION DOCKER_INSTALL_MIRROR
+export NPM_REGISTRY
+export CODEX_BASE_URL CODEX_TOKEN CLAUDE_BASE_URL CLAUDE_TOKEN
 if [ "${DOCKER_REGISTRY_MIRROR+x}" = x ]; then
     export DOCKER_REGISTRY_MIRROR
 fi
@@ -769,7 +938,31 @@ else
     info "Skip install mise and Node.js LTS"
 fi
 
-# 12.启用 BBR
+# 12.安装 Codex CLI
+if [ "${INSTALL_CODEX}" = true ]; then
+    info "Installing Codex CLI"
+    if [ -f "${SCRIPT_DIR}/scripts/install/codex.sh" ]; then
+        "${SCRIPT_DIR}/scripts/install/codex.sh"
+    else
+        sh -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/codex.sh" -o -)"
+    fi
+else
+    info "Skip install Codex CLI"
+fi
+
+# 13.安装 Claude Code CLI
+if [ "${INSTALL_CLAUDE_CODE}" = true ]; then
+    info "Installing Claude Code CLI"
+    if [ -f "${SCRIPT_DIR}/scripts/install/claude_code.sh" ]; then
+        "${SCRIPT_DIR}/scripts/install/claude_code.sh"
+    else
+        sh -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/claude_code.sh" -o -)"
+    fi
+else
+    info "Skip install Claude Code CLI"
+fi
+
+# 14.启用 BBR
 if [ "${ENABLE_BBR}" = true ]; then
     if sysctl net.ipv4.tcp_available_congestion_control | grep bbr; then
         echo "net.core.default_qdisc=fq" >>/etc/sysctl.conf
@@ -780,7 +973,7 @@ else
     info "Skip enable BBR"
 fi
 
-# 13.安装 acme.sh
+# 15.安装 acme.sh
 if [ "${INSTALL_ACME}" = true ]; then
     if [ ! -d /data/.acme.sh ]; then
         curl https://get.acme.sh | sh
