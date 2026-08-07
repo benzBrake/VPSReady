@@ -4,13 +4,13 @@ VPS 自动化初始化脚本项目，用于快速配置新 VPS 环境。
 
 ## 项目概述
 
-VPSReady 是一套用于 Debian/Ubuntu/Alpine Linux 的 VPS 初始化脚本集合。它会自动完成 SSH 安全配置、Docker 环境搭建、Nginx 安装、SSL 证书申请等常见 VPS 初始化任务，让新 VPS 快速投入使用。
+VPSReady 是一套用于 Debian/Ubuntu/Alpine Linux 的 VPS 初始化脚本集合。它会自动完成 SSH 安全配置、Docker 环境搭建、Nginx 或 Caddy 安装、SSL 证书申请等常见 VPS 初始化任务，让新 VPS 快速投入使用。
 
 ### 核心功能
 
 - **SSH 安全配置**: 自动修改 SSH 端口、配置公钥认证
 - **Docker 环境**: 根据内存自动判断是否安装 Docker 和 Docker Compose
-- **Nginx 安装**: 自动安装并配置 Nginx
+- **Web 服务器安装**: 在 Nginx 与 Caddy 中选择一个安装，或跳过安装
 - **SSL 证书**: 集成 acme.sh 自动申请 Let's Encrypt 证书
 - **BBR 优化**: 自动启用 TCP BBR 拥塞控制算法
 - **系统优化**: 安装常用工具包、创建系统用户、配置环境
@@ -23,7 +23,7 @@ VPSReady 是一套用于 Debian/Ubuntu/Alpine Linux 的 VPS 初始化脚本集�
 | 脚本语言 | POSIX Shell | - |
 | 支持系统 | Debian/Ubuntu/Alpine | - |
 | 容器化 | Docker | Latest |
-| Web 服务器 | Nginx | Latest |
+| Web 服务器 | Nginx / Caddy | Latest |
 | SSL 工具 | acme.sh | Latest |
 | 同步工具 | Rclone | Latest |
 <!-- /AUTO:tech-stack -->
@@ -80,13 +80,13 @@ chmod +x ./init.sh
 
 ### 交互式初始化
 
-在已连接终端的 VPS 上执行 `./init.sh -i` 会启动初始化向导。向导会依次配置时区、GitHub 镜像、SSH 加固、Let's Encrypt 邮箱，以及 MySQL 客户端、Docker、Nginx、Rclone、Glow、mise/Node.js、BBR 与 acme.sh。
+在已连接终端的 VPS 上执行 `./init.sh -i` 会启动初始化向导。向导会依次配置时区、GitHub 镜像、SSH 加固、Let's Encrypt 邮箱，以及 MySQL 客户端、Docker、Web 服务器、Rclone、Glow、mise/Node.js、BBR 与 acme.sh。Web 服务器可选择 `nginx`、`caddy` 或 `none`，每次初始化最多安装一个。
 
 现有环境变量会显示为默认值，直接按 Enter 保留该值。向导不会额外生成交互配置文件；时区、SSH、镜像和软件安装等既有流程本来会修改的系统设置，仍会按确认结果执行。执行前会展示汇总，必须确认后才会开始修改系统。SSH 加固默认启用，包含公钥配置、禁用密码登录和将端口改为 `33022` 的选项。
 
 ### 无人值守初始化
 
-`./init.sh` 不带参数时仍保持原有的无人值守行为，适用于云初始化和自动化脚本。`-h` 或 `--help` 可查看可用参数。
+`./init.sh` 不带参数时仍保持原有的无人值守行为，适用于云初始化和自动化脚本，默认选择 Nginx。`-h` 或 `--help` 可查看可用参数。
 
 ## 高级配置
 
@@ -114,6 +114,15 @@ NOT_INSTALL_SSH_KEY=true ./init.sh
 
 ```bash
 NOT_INSTALL_DOCKER=true ./init.sh
+```
+
+### 选择 Web 服务器
+
+使用 `WEB_SERVER` 预设 Web 服务器选择。可选值为 `nginx`、`caddy` 和 `none`；未设置时默认选择 Nginx。显式设置的值优先于低内存默认策略。检测到另一 Web 服务器或 80/443 端口监听时，脚本只会警告，不会停止、禁用或卸载已有服务。
+
+```bash
+WEB_SERVER=caddy ./init.sh
+WEB_SERVER=none ./init.sh
 ```
 
 ### 自定义 Let's Encrypt 邮箱

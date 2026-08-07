@@ -138,6 +138,17 @@ is_valid_docker_registry_mirror() {
     esac
 }
 
+is_valid_web_server() {
+    case "${1}" in
+        nginx|caddy|none)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
 is_valid_timezone() {
     case "${1}" in
         ""|/*|*".."*|*[!ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._+/-]*)
@@ -209,6 +220,18 @@ prompt_docker_region() {
     return 0
 }
 
+prompt_web_server() {
+    while :; do
+        prompt_value "Web server (nginx/caddy/none)" "${WEB_SERVER}"
+        WEB_SERVER=$(printf '%s' "${PROMPT_VALUE}" | tr '[:upper:]' '[:lower:]')
+        if is_valid_web_server "${WEB_SERVER}"; then
+            return 0
+        fi
+
+        warn "Web server must be nginx, caddy, or none."
+    done
+}
+
 prompt_timezone() {
     while :; do
         prompt_value "Timezone" "${TIMEZONE}"
@@ -268,7 +291,7 @@ print_summary() {
             fi
         fi
     fi
-    printf '  Nginx: %s\n' "${INSTALL_NGINX}" >/dev/tty
+    printf '  Web server: %s\n' "${WEB_SERVER}" >/dev/tty
     printf '  Rclone: %s\n' "${INSTALL_RCLONE}" >/dev/tty
     printf '  Glow: %s\n' "${INSTALL_GLOW}" >/dev/tty
     printf '  mise and Node.js LTS: %s\n' "${INSTALL_MISE}" >/dev/tty
@@ -324,7 +347,7 @@ run_interactive_wizard() {
         warn "Detected ${TOTAL_RAM} MB RAM; MySQL client and Docker default to disabled."
     fi
     if [ "${TOTAL_RAM}" -le 64 ]; then
-        warn "Detected ${TOTAL_RAM} MB RAM; Nginx defaults to disabled."
+        warn "Detected ${TOTAL_RAM} MB RAM; Web server defaults to disabled."
     fi
     if pgrep dockerd >/dev/null 2>&1; then
         warn "Docker daemon is already running; Docker defaults to disabled."
@@ -337,8 +360,7 @@ run_interactive_wizard() {
     if [ "${INSTALL_DOCKER}" = true ]; then
         prompt_docker_region
     fi
-    prompt_yes_no "Install Nginx" "${INSTALL_NGINX}"
-    INSTALL_NGINX="${PROMPT_VALUE}"
+    prompt_web_server
     prompt_yes_no "Install Rclone" "${INSTALL_RCLONE}"
     INSTALL_RCLONE="${PROMPT_VALUE}"
     prompt_yes_no "Install Glow" "${INSTALL_GLOW}"
@@ -380,6 +402,12 @@ MIRROR=$(printf '%s' "${MIRROR}" | sed 's#/$##g')
 TIMEZONE="${TIMEZONE:-Asia/Shanghai}"
 DOCKER_REGION="${DOCKER_REGION:-global}"
 DOCKER_INSTALL_MIRROR="${DOCKER_INSTALL_MIRROR:-}"
+WEB_SERVER_EXPLICIT=false
+if [ -n "${WEB_SERVER}" ]; then
+    WEB_SERVER_EXPLICIT=true
+fi
+WEB_SERVER="${WEB_SERVER:-nginx}"
+WEB_SERVER=$(printf '%s' "${WEB_SERVER}" | tr '[:upper:]' '[:lower:]')
 if [ -z "${LET_MAIL}" ]; then
     LET_MAIL="webmaster@woai.ru"
 fi
@@ -401,6 +429,11 @@ fi
 
 if [ "${DOCKER_REGISTRY_MIRROR+x}" = x ] && ! is_valid_docker_registry_mirror "${DOCKER_REGISTRY_MIRROR}"; then
     err "DOCKER_REGISTRY_MIRROR must be an http:// or https:// URL, or none"
+    exit 1
+fi
+
+if ! is_valid_web_server "${WEB_SERVER}"; then
+    err "WEB_SERVER must be nginx, caddy, or none"
     exit 1
 fi
 
@@ -426,7 +459,6 @@ fi
 # 0.安装内容
 INSTALL_MYSQL=true
 INSTALL_DOCKER=true
-INSTALL_NGINX=true
 TOTAL_RAM=$(free -m | awk '$1=="This" || NR == 2' | awk '{print $2}')
 if [ "${TOTAL_RAM}" -gt 8192 ]; then
     TOTAL_RAM=$(free -m | awk '$1=="This" || NR == 2' | awk '{print $7}')
@@ -435,8 +467,8 @@ if [ "${TOTAL_RAM}" -le 512 ]; then
     INSTALL_MYSQL=false
     INSTALL_DOCKER=false
 fi
-if [ "${TOTAL_RAM}" -le 64 ]; then
-    INSTALL_NGINX=false
+if [ "${TOTAL_RAM}" -le 64 ] && [ "${WEB_SERVER_EXPLICIT}" = false ]; then
+    WEB_SERVER=none
 fi
 if [ "${NOT_INSTALL_DOCKER}" = true ]; then
     INSTALL_DOCKER=false
@@ -487,6 +519,61 @@ install_packages_separately() {
     if [ -n "${FAILED_PACKAGES}" ]; then
         warn "Skipped failed packages: ${FAILED_PACKAGES}"
     fi
+}
+
+warn_web_server_conflicts() {
+    SELECTED_WEB_SERVER="${1}"
+
+    case "${SELECTED_WEB_SERVER}" in
+        nginx)
+            OTHER_WEB_SERVER=caddy
+            ;;
+        caddy)
+            OTHER_WEB_SERVER=nginx
+            ;;
+        *)
+            return 0
+            ;;
+    esac
+
+    if command -v "${OTHER_WEB_SERVER}" >/dev/null 2>&1 || \
+        pgrep "${OTHER_WEB_SERVER}" >/dev/null 2>&1; then
+        warn "Detected ${OTHER_WEB_SERVER}; it will not be stopped, disabled, or removed."
+    fi
+
+    if command -v ss >/dev/null 2>&1; then
+        LISTENING_WEB_PORTS=$(ss -ltn 2>/dev/null | \
+            awk '$4 ~ /:80$/ || $4 ~ /:443$/ {print $4}')
+        if [ -n "${LISTENING_WEB_PORTS}" ]; then
+            warn "Detected listener on 80 or 443: ${LISTENING_WEB_PORTS}"
+        fi
+    fi
+}
+
+install_web_server() {
+    case "${WEB_SERVER}" in
+        nginx)
+            info "Installing Nginx"
+            warn_web_server_conflicts nginx
+            if [ -f /data/scripts/install/nginx.sh ]; then
+                /data/scripts/install/nginx.sh
+            else
+                bash -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/nginx.sh" -o -)"
+            fi
+            ;;
+        caddy)
+            info "Installing Caddy"
+            warn_web_server_conflicts caddy
+            if [ -f /data/scripts/install/caddy.sh ]; then
+                /data/scripts/install/caddy.sh
+            else
+                bash -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/caddy.sh" -o -)"
+            fi
+            ;;
+        none)
+            info "Skip Web server"
+            ;;
+    esac
 }
 
 # 检查MIRROR是否为空
@@ -619,14 +706,7 @@ else
             err "Cannot create /data/docker-compose.yml"
         fi
     fi
-    # Nginx
-    [ "${INSTALL_NGINX}" = true ] && {
-        if [ -f /data/scripts/install/nginx.sh ]; then
-            /data/scripts/install/nginx.sh
-        else
-            bash -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/nginx.sh" -o -)"
-        fi
-    }
+    install_web_server
 fi
 
 # 6.配置 vim
