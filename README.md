@@ -352,7 +352,7 @@ chmod +x init.sh scripts/install/*.sh scripts/configure/*.sh scripts/tools/*.sh
 | 模块 | 本地执行 | 主要配置 |
 |------|----------|----------|
 | ACME SSL | `sh scripts/install/acme.sh` | `MIRROR`、`LET_MAIL` |
-| Caddy | `sh scripts/install/caddy.sh` | `MIRROR`、`GH_MIRROR`、`CADDY_*`、`DOWNLOAD_URL` |
+| Caddy | `sh scripts/install/caddy.sh` | 使用 Docker Compose，默认数据目录为 `/data/caddy`；支持 `CADDY_DATA_DIR`、`CADDY_COMPOSE_FILE`、`CADDY_IMAGE`、`CADDY_CONFIG_TYPE` |
 | Docker | `sh scripts/install/docker.sh` | `DOCKER_REGION`、`DOCKER_INSTALL_MIRROR`、`DOCKER_REGISTRY_MIRROR`、`DOCKER_*` |
 | MySQL | `sh scripts/install/mysql.sh` | `MYSQL_ROOT_PASSWORD`、`MYSQL_CONTAINER_NAME`、`MYSQL_IMAGE`、`MYSQL_DATA_DIR`、`MYSQL_PORT` |
 | Glow | `sh scripts/install/glow.sh` | `GLOW_VERSION`、`GLOW_INSTALL_DIR`、`GLOW_MIRROR` |
@@ -360,7 +360,7 @@ chmod +x init.sh scripts/install/*.sh scripts/configure/*.sh scripts/tools/*.sh
 | Codex CLI | `sh scripts/install/codex.sh` | `NPM_REGISTRY`、`CODEX_BASE_URL`、`CODEX_TOKEN`；默认 npmmirror；安装 `@openai/codex` |
 | Claude Code CLI | `sh scripts/install/claude_code.sh` | `NPM_REGISTRY`、`CLAUDE_BASE_URL`、`CLAUDE_TOKEN`；默认 npmmirror；安装 `@anthropic-ai/claude-code` |
 | tcping | `sh scripts/install/tcping.sh` | `GH_MIRROR`、`MIRROR`、`TCPING_VERSION`、`TCPING_INSTALL_DIR`、`TCPING_FORCE_REINSTALL` |
-| Nginx | `sh scripts/install/nginx.sh` | 使用 `${EZ_DATA}/web` 配置 |
+| Nginx | `sh scripts/install/nginx.sh` | 使用 Docker Compose，默认数据目录为 `/data/nginx`；支持 `NGINX_DATA_DIR`、`NGINX_COMPOSE_FILE`、`NGINX_IMAGE` |
 
 MySQL 模块要求 Docker 和 Docker Compose 均已可用；缺少 Docker 时会直接跳过。默认在 `${EZ_DATA}/mysql` 写入 `docker-compose.yml`、`.env` 和数据库数据目录，完成后会输出 root 密码。
 

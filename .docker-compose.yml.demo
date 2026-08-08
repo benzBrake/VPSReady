@@ -1,21 +1,4 @@
 services:
-    nginx:
-        image: nginx:latest
-        container_name: "nginx"
-        restart: always
-        environment:
-           - TZ=Asia/Shanghai
-        depends_on:
-           - "php"
-        ports:
-            - "80:80"
-            - "443:443"
-        volumes:
-           - ${EZ_DATA}/web/webconf:/etc/nginx/conf.d:ro
-           - ${EZ_DATA}/web:/data/web
-           - ${EZ_DATA}/web/nginx.conf:/etc/nginx/nginx.conf:ro
-        networks:
-           - net-app
     php:
         image: php:7.4-fpm-custom
         container_name: "php"
@@ -43,16 +26,6 @@ services:
             - ${EZ_DATA}/mysql:/var/lib/mysql
         ports:
             - "127.0.0.1:3306:3306"
-        networks:
-            - net-app
-    trojan:
-        image: trojan
-        container_name: trojan
-        restart: always
-        privileged: true
-        volumes:
-            - ${EZ_DATA}/web/webcert:/usr/local/etc/trojan/cert:ro
-        command: init
         networks:
             - net-app
     bitwarden:
