@@ -99,13 +99,40 @@ ensure_line() {
     fi
 }
 
+remove_line() {
+    CONFIG_FILE="${1}"
+    CONFIG_LINE="${2}"
+    TEMP_FILE=""
+
+    [ -f "${CONFIG_FILE}" ] || return 0
+
+    TEMP_FILE=$(mktemp "${CONFIG_FILE}.XXXXXX") || return 1
+    if grep -Fvx "${CONFIG_LINE}" "${CONFIG_FILE}" >"${TEMP_FILE}"; then
+        :
+    else
+        GREP_STATUS=${?}
+        case "${GREP_STATUS}" in
+            1)
+                :
+                ;;
+            *)
+                rm -f "${TEMP_FILE}"
+                return 1
+                ;;
+        esac
+    fi
+
+    mv "${TEMP_FILE}" "${CONFIG_FILE}"
+}
+
 configure_shell_environment() {
     MISE_PATH_LINE='export PATH="${HOME}/.local/bin:${PATH}"'
-    MISE_SH_ACTIVATE_LINE='eval "$(mise activate sh)"'
     MISE_BASH_ACTIVATE_LINE='eval "$(mise activate bash)"'
 
     ensure_line "${HOME}/.profile" "${MISE_PATH_LINE}"
-    ensure_line "${HOME}/.profile" "${MISE_SH_ACTIVATE_LINE}"
+    # mise no longer accepts "sh" as an activation shell. Keep .profile POSIX-safe
+    # and let interactive Bash load its activation from .bashrc.
+    remove_line "${HOME}/.profile" 'eval "$(mise activate sh)"'
     ensure_line "${HOME}/.bashrc" "${MISE_PATH_LINE}"
     ensure_line "${HOME}/.bashrc" "${MISE_BASH_ACTIVATE_LINE}"
 }
