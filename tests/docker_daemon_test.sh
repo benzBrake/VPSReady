@@ -106,6 +106,30 @@ with open(sys.argv[1], encoding="utf-8") as source:
 assert "registry-mirrors" not in config
 PY
 
+mkdir -p "${TEST_DIR}/proc/1234"
+printf '%s\000' '/usr/local/qcloud/YunJing/YDService' > "${TEST_DIR}/proc/1234/cmdline"
+printf '%s' '{}' > "${TEST_DIR}/daemon.json"
+
+(
+    unset DOCKER_REGISTRY_MIRROR
+    DOCKER_REGION=global
+    DOCKER_PROC_ROOT="${TEST_DIR}/proc"
+    DOCKER_DAEMON_JSON="${TEST_DIR}/daemon.json"
+    DOCKER_CONFIG_BACKUP="${TEST_DIR}/daemon.json.bak"
+    . "${ROOT_DIR}/lib/docker_daemon.sh"
+    configure_docker_daemon
+)
+
+"${PYTHON_COMMAND}" - "${TEST_DIR}/daemon.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as source:
+    config = json.load(source)
+
+assert config["registry-mirrors"] == ["https://mirror.ccs.tencentyun.com"]
+PY
+
 printf '%s' '{invalid json' > "${TEST_DIR}/invalid.json"
 if (
     DOCKER_REGION=cn

@@ -17,6 +17,8 @@ DOCKER_CONFIG_BACKUP=${DOCKER_CONFIG_BACKUP:-/etc/docker/daemon.json.bak}
 DOCKER_REGION=${DOCKER_REGION:-global}
 
 DOCKER_DEFAULT_REGISTRY_MIRRORS='["https://docker.1ms.run","https://dockerproxy.net","https://proxy.vvvv.ee","https://dockerproxy.link"]'
+DOCKER_TENCENT_REGISTRY_MIRROR=https://mirror.ccs.tencentyun.com
+DOCKER_PROC_ROOT=${DOCKER_PROC_ROOT:-/proc}
 DOCKER_MANAGE_REGISTRY=false
 DOCKER_REGISTRY_MIRROR_VALUE=""
 
@@ -29,6 +31,29 @@ case "${DOCKER_REGION}" in
         ;;
 esac
 
+has_qcloud_process() {
+    for DOCKER_PROCESS_DIR in "${DOCKER_PROC_ROOT}"/[0-9]*; do
+        [ -d "${DOCKER_PROCESS_DIR}" ] || continue
+
+        # qcloud agents may be scripts, so inspect both command arguments and executables.
+        if [ -r "${DOCKER_PROCESS_DIR}/cmdline" ] && \
+            grep -F -q '/usr/local/qcloud/' "${DOCKER_PROCESS_DIR}/cmdline" 2>/dev/null; then
+            return 0
+        fi
+
+        if [ -L "${DOCKER_PROCESS_DIR}/exe" ]; then
+            DOCKER_PROCESS_EXECUTABLE=$(readlink "${DOCKER_PROCESS_DIR}/exe" 2>/dev/null) || continue
+            case "${DOCKER_PROCESS_EXECUTABLE}" in
+                /usr/local/qcloud/*)
+                    return 0
+                    ;;
+            esac
+        fi
+    done
+
+    return 1
+}
+
 if [ "${DOCKER_REGISTRY_MIRROR+x}" = x ]; then
     DOCKER_MANAGE_REGISTRY=true
     if [ -n "${DOCKER_REGISTRY_MIRROR}" ]; then
@@ -36,6 +61,9 @@ if [ "${DOCKER_REGISTRY_MIRROR+x}" = x ]; then
     else
         DOCKER_REGISTRY_MIRROR_VALUE=none
     fi
+elif has_qcloud_process; then
+    DOCKER_MANAGE_REGISTRY=true
+    DOCKER_REGISTRY_MIRROR_VALUE="${DOCKER_TENCENT_REGISTRY_MIRROR}"
 elif [ "${DOCKER_REGION}" = cn ]; then
     DOCKER_MANAGE_REGISTRY=true
     DOCKER_REGISTRY_MIRROR_VALUE=default
