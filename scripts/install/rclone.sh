@@ -21,7 +21,7 @@ fi
 # ====================================
 RCLONE_VERSION=${RCLONE_VERSION:-latest}
 RCLONE_INSTALL_DIR=${RCLONE_INSTALL_DIR:-/usr/local/bin}
-RCLONE_MIRROR=${RCLONE_MIRROR:-${GH_MIRROR:-https://github.com}}
+RCLONE_MIRROR=$(printf '%s' "${RCLONE_MIRROR:-${GH_MIRROR:-}}" | sed 's#/*$##')
 RCLONE_REPO="rclone/rclone"
 
 # ====================================
@@ -105,12 +105,40 @@ download_rclone() {
     }
 
     FILENAME="rclone-${VERSION}-linux-${ARCH}.zip"
-    DOWNLOAD_URL="${RCLONE_MIRROR}/${RCLONE_REPO}/releases/download/${VERSION}/${FILENAME}"
+    GITHUB_DOWNLOAD_URL="https://github.com/${RCLONE_REPO}/releases/download/${VERSION}/${FILENAME}"
+    DOWNLOAD_URL=""
 
-    info "Downloading: ${DOWNLOAD_URL}"
+    # GH_MIRROR and RCLONE_MIRROR are proxy prefixes for the complete GitHub URL.
+    if [ -n "${RCLONE_MIRROR}" ]; then
+        case "${RCLONE_MIRROR}" in
+            https://github.com|http://github.com)
+                MIRROR_DOWNLOAD_URL="${RCLONE_MIRROR}/${RCLONE_REPO}/releases/download/${VERSION}/${FILENAME}"
+                ;;
+            *)
+                MIRROR_DOWNLOAD_URL="${RCLONE_MIRROR}/${GITHUB_DOWNLOAD_URL}"
+                ;;
+        esac
+        info "Downloading from mirror: ${MIRROR_DOWNLOAD_URL}"
+        if download_file "${MIRROR_DOWNLOAD_URL}" rclone.zip; then
+            DOWNLOAD_URL="${MIRROR_DOWNLOAD_URL}"
+        else
+            warn "Mirror download failed, falling back to GitHub Releases"
+        fi
+    fi
 
-    if ! download_file "${DOWNLOAD_URL}" rclone.zip; then
-        err "Failed to download Rclone from ${DOWNLOAD_URL}"
+    if [ -z "${DOWNLOAD_URL:-}" ]; then
+        DOWNLOAD_URL="${GITHUB_DOWNLOAD_URL}"
+        info "Downloading: ${DOWNLOAD_URL}"
+        if ! download_file "${DOWNLOAD_URL}" rclone.zip; then
+            err "Failed to download Rclone from ${DOWNLOAD_URL}"
+            cd - >/dev/null
+            rm -rf "${TMP_DIR}"
+            return 1
+        fi
+    fi
+
+    if [ ! -s rclone.zip ]; then
+        err "Downloaded Rclone archive is empty"
         cd - >/dev/null
         rm -rf "${TMP_DIR}"
         return 1
