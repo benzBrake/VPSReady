@@ -19,6 +19,7 @@ MYSQL_DATA_DIR=${MYSQL_DATA_DIR:-/data/mysql}
 MYSQL_COMPOSE_FILE=${MYSQL_COMPOSE_FILE:-${MYSQL_DATA_DIR}/docker-compose.yml}
 MYSQL_ENV_FILE=${MYSQL_ENV_FILE:-${MYSQL_DATA_DIR}/.env}
 MYSQL_PORT=${MYSQL_PORT:-3306}
+MYSQL_PROFILE_FILE=${MYSQL_PROFILE_FILE:-/data/.profile}
 
 if ! command -v docker >/dev/null 2>&1; then
     info "Docker is not installed; skip MySQL installation"
@@ -133,9 +134,59 @@ run_compose() {
     )
 }
 
+shell_quote() {
+    printf '%s' "${1}" | sed "s/'/'\\\\''/g"
+}
+
+configure_mysql_profile() {
+    MYSQL_PROFILE_START='# VPSReady MySQL login function begin'
+    MYSQL_PROFILE_END='# VPSReady MySQL login function end'
+    MYSQL_PROFILE_ENV_FILE_QUOTED=$(shell_quote "${MYSQL_ENV_FILE}")
+    MYSQL_PROFILE_PORT_QUOTED=$(shell_quote "${MYSQL_PORT}")
+    MYSQL_PROFILE_DIR=$(dirname "${MYSQL_PROFILE_FILE}")
+    if ! mkdir -p "${MYSQL_PROFILE_DIR}"; then
+        err "Failed to create ${MYSQL_PROFILE_DIR}"
+        return 1
+    fi
+    MYSQL_PROFILE_TEMP_FILE=$(mktemp "${MYSQL_PROFILE_FILE}.XXXXXX")
+
+    if [ -f "${MYSQL_PROFILE_FILE}" ]; then
+        awk -v start="${MYSQL_PROFILE_START}" -v end="${MYSQL_PROFILE_END}" '
+            $0 == start { skip = 1; next }
+            $0 == end { skip = 0; next }
+            !skip { print }
+        ' "${MYSQL_PROFILE_FILE}" >"${MYSQL_PROFILE_TEMP_FILE}"
+    fi
+
+    printf '%s\n' \
+        "${MYSQL_PROFILE_START}" \
+        'mysql() (' \
+        '    MYSQL_PROFILE_ENV_FILE='"'${MYSQL_PROFILE_ENV_FILE_QUOTED}'" \
+        '    MYSQL_PROFILE_PASSWORD=$(sed -n '\''s/^MYSQL_ROOT_PASSWORD=//p'\'' "${MYSQL_PROFILE_ENV_FILE}" | sed -n '\''1p'\'')' \
+        '    if [ -z "${MYSQL_PROFILE_PASSWORD}" ]; then' \
+        '        echo "MySQL root password is missing from ${MYSQL_PROFILE_ENV_FILE}" >&2' \
+        '        return 1' \
+        '    fi' \
+        '    if ! command -v mysql >/dev/null 2>&1; then' \
+        '        echo "MySQL client is not installed" >&2' \
+        '        return 1' \
+        '    fi' \
+        '    MYSQL_PWD="${MYSQL_PROFILE_PASSWORD}" mysql -h 127.0.0.1 -P '"${MYSQL_PROFILE_PORT_QUOTED}"' -u root "${@}"' \
+        ')' \
+        "${MYSQL_PROFILE_END}" >>"${MYSQL_PROFILE_TEMP_FILE}"
+
+    if ! mv "${MYSQL_PROFILE_TEMP_FILE}" "${MYSQL_PROFILE_FILE}"; then
+        rm -f "${MYSQL_PROFILE_TEMP_FILE}"
+        err "Failed to update ${MYSQL_PROFILE_FILE}"
+        return 1
+    fi
+}
+
 info "Starting MySQL Compose project in ${MYSQL_DATA_DIR}"
 run_compose
 
 suc "MySQL container started"
+configure_mysql_profile
+suc "MySQL login function written to ${MYSQL_PROFILE_FILE}"
 printf 'MySQL root password: %s\n' "${MYSQL_ROOT_PASSWORD}"
 printf 'MySQL connection: 127.0.0.1:%s (container: %s)\n' "${MYSQL_PORT}" "${MYSQL_CONTAINER_NAME}"
