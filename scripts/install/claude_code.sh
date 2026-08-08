@@ -72,6 +72,19 @@ find_mise() {
     return 1
 }
 
+ensure_mise_in_path() {
+    MISE_BIN_DIR=$(dirname "${MISE_COMMAND}")
+
+    case ":${PATH}:" in
+        *":${MISE_BIN_DIR}:"*)
+            ;;
+        *)
+            PATH="${MISE_BIN_DIR}:${PATH}"
+            export PATH
+            ;;
+    esac
+}
+
 install_cli() {
     if [ -n "${NPM_REGISTRY}" ]; then
         "${MISE_COMMAND}" exec -- npm install --global \
@@ -149,6 +162,7 @@ if ! find_mise; then
     err "mise is required to install Claude Code CLI"
     exit 1
 fi
+ensure_mise_in_path
 
 if "${MISE_COMMAND}" exec -- sh -c "command -v ${CLI_COMMAND} >/dev/null 2>&1"; then
     info "Claude Code CLI is already installed, skip"

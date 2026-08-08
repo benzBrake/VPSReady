@@ -37,6 +37,19 @@ find_mise() {
     return 1
 }
 
+ensure_mise_in_path() {
+    MISE_BIN_DIR=$(dirname "${MISE_COMMAND}")
+
+    case ":${PATH}:" in
+        *":${MISE_BIN_DIR}:"*)
+            ;;
+        *)
+            PATH="${MISE_BIN_DIR}:${PATH}"
+            export PATH
+            ;;
+    esac
+}
+
 install_mise() {
     if find_mise; then
         info "mise is already installed: ${MISE_COMMAND}"
@@ -126,6 +139,7 @@ if [ -z "${HOME:-}" ]; then
 fi
 
 install_mise
+ensure_mise_in_path
 configure_shell_environment
 install_lts_node
 verify_installation
