@@ -94,18 +94,37 @@ prompt_secret() {
         exit 1
     fi
 
-    if ! stty -echo </dev/tty; then
-        err "Unable to hide token input."
+    # Disable echo and canonical mode: read one char at a time, no echoing
+    if ! stty -echo -icanon min 1 time 0 </dev/tty; then
+        err "Unable to configure terminal for secret input."
         exit 1
     fi
 
     trap 'stty "${PROMPT_TTY_STATE}" </dev/tty 2>/dev/null; printf "\n" >/dev/tty; exit 130' INT TERM HUP
-    if ! IFS= read -r PROMPT_INPUT </dev/tty; then
-        stty "${PROMPT_TTY_STATE}" </dev/tty 2>/dev/null || true
-        trap - INT TERM HUP
-        warn "Interactive input closed. Initialization canceled."
-        exit 1
-    fi
+
+    PROMPT_INPUT=""
+    PROMPT_BACKSPACE=$(printf '\010')
+
+    while IFS= read -r -n1 CHAR </dev/tty; do
+        case "${CHAR}" in
+            "${PROMPT_BACKSPACE}"|$(printf '\177'))
+                # Backspace: remove last char and cursor one step back
+                if [ -n "${PROMPT_INPUT}" ]; then
+                    PROMPT_INPUT="${PROMPT_INPUT%?}"
+                    printf '\b \b' >/dev/tty
+                fi
+                ;;
+            '')
+                # Enter: end of input
+                break
+                ;;
+            *)
+                PROMPT_INPUT="${PROMPT_INPUT}${CHAR}"
+                printf '*' >/dev/tty
+                ;;
+        esac
+    done
+
     stty "${PROMPT_TTY_STATE}" </dev/tty 2>/dev/null || true
     trap - INT TERM HUP
     printf '\n' >/dev/tty
