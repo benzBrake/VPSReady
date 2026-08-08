@@ -1,5 +1,8 @@
 #!/bin/bash
 ###
+# DEPRECATED — AI 时代已无必要，直接让 AI 生成 Nginx 配置即可。
+# 保留仅供离线/无 AI 环境参考。
+#
 # @Author: Ryan
 # @Date: 2021-02-22 20:18:53
 # @LastEditTime: 2023-05-12 22:39:39
