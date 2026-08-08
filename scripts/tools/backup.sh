@@ -31,11 +31,13 @@ if [ -f /etc/alpine-release ]; then
 fi
 
 [[ $EUID -ne 0 ]] && echo "Error: This script must be run as root!" && exit 1
-if [ -f "/data/.ezenv" ]; then
-    . "/data/.ezenv"
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
+EZ_DATA="${EZ_DATA:-$(CDPATH= cd -- "${SCRIPT_DIR}/../.." && pwd)}"
+if [ -f "${EZ_DATA}/.ezenv" ]; then
+    . "${EZ_DATA}/.ezenv"
 fi
-if [ -f "/data/.profile" ]; then
-    . "/data/.profile"
+if [ -f "${EZ_DATA}/.profile" ]; then
+    . "${EZ_DATA}/.profile"
 fi
 
 ########## START OF CONFIG ##########
@@ -75,13 +77,13 @@ fi
 
 # Below is a list of files and directories that will be backed up in the tar backup
 # For example:
-# File: /data/www/default/test.tgz
-# Directory: /data/www/default/test
+# File: ${EZ_DATA}/www/default/test.tgz
+# Directory: ${EZ_DATA}/www/default/test
 if [ -n "${BS_BACKUP_DIRS}" ]; then
     IFS=',' read -r -a BACKUP <<< "${BS_BACKUP_DIRS}"
 else
     # Default backup directories if environment variable is not set
-    BACKUP=("/data")
+    BACKUP=("${EZ_DATA}")
 fi
 
 # Number of days to store daily local backups (default 7 days)

@@ -15,11 +15,12 @@ fi
 
 MYSQL_CONTAINER_NAME=${MYSQL_CONTAINER_NAME:-mysql}
 MYSQL_IMAGE=${MYSQL_IMAGE:-mysql:latest}
-MYSQL_DATA_DIR=${MYSQL_DATA_DIR:-/data/mysql}
+EZ_DATA="${EZ_DATA:-$(CDPATH= cd -- "${SCRIPT_DIR}/../.." && pwd)}"
+MYSQL_DATA_DIR=${MYSQL_DATA_DIR:-${EZ_DATA}/mysql}
 MYSQL_COMPOSE_FILE=${MYSQL_COMPOSE_FILE:-${MYSQL_DATA_DIR}/docker-compose.yml}
 MYSQL_ENV_FILE=${MYSQL_ENV_FILE:-${MYSQL_DATA_DIR}/.env}
 MYSQL_PORT=${MYSQL_PORT:-3306}
-MYSQL_PROFILE_FILE=${MYSQL_PROFILE_FILE:-/data/.profile}
+MYSQL_PROFILE_FILE=${MYSQL_PROFILE_FILE:-${EZ_DATA}/.profile}
 
 if ! command -v docker >/dev/null 2>&1; then
     info "Docker is not installed; skip MySQL installation"

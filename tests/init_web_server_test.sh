@@ -73,8 +73,8 @@ install_web_server
 [ "${INSTALL_LOG}" = 'Skip Web server' ]
 
 grep -F 'warn_web_server_conflicts nginx' "${ROOT_DIR}/init.sh" >/dev/null
-grep -F '/data/scripts/install/nginx.sh' "${ROOT_DIR}/init.sh" >/dev/null
+grep -F '"${EZ_DATA}/scripts/install/nginx.sh"' "${ROOT_DIR}/init.sh" >/dev/null
 grep -F 'warn_web_server_conflicts caddy' "${ROOT_DIR}/init.sh" >/dev/null
-grep -F '/data/scripts/install/caddy.sh' "${ROOT_DIR}/init.sh" >/dev/null
+grep -F '"${EZ_DATA}/scripts/install/caddy.sh"' "${ROOT_DIR}/init.sh" >/dev/null
 
 printf '%s\n' 'Web server selection tests passed'

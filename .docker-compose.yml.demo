@@ -11,9 +11,9 @@ services:
             - "80:80"
             - "443:443"
         volumes:
-           - /data/web/webconf:/etc/nginx/conf.d:ro
-           - /data/web:/data/web
-           - /data/web/nginx.conf:/etc/nginx/nginx.conf:ro
+           - ${EZ_DATA}/web/webconf:/etc/nginx/conf.d:ro
+           - ${EZ_DATA}/web:/data/web
+           - ${EZ_DATA}/web/nginx.conf:/etc/nginx/nginx.conf:ro
         networks:
            - net-app
     php:
@@ -21,14 +21,14 @@ services:
         container_name: "php"
         restart: always
         build:
-           context: /data/Dockerfiles
+           context: ${EZ_DATA}/Dockerfiles
            dockerfile: php
         ports:
             - "127.0.0.1:9000:9000"
         environment:
             - TZ=Asia/Shanghai
         volumes:
-            - /data/web/webapps:/data/web/webapps
+            - ${EZ_DATA}/web/webapps:/data/web/webapps
         networks:
             - net-app
     mysql:
@@ -40,7 +40,7 @@ services:
         environment:
             MYSQL_ROOT_PASSWORD: root
         volumes:
-            - /data/mysql:/var/lib/mysql
+            - ${EZ_DATA}/mysql:/var/lib/mysql
         ports:
             - "127.0.0.1:3306:3306"
         networks:
@@ -51,7 +51,7 @@ services:
         restart: always
         privileged: true
         volumes:
-            - /data/web/webcert:/usr/local/etc/trojan/cert:ro
+            - ${EZ_DATA}/web/webcert:/usr/local/etc/trojan/cert:ro
         command: init
         networks:
             - net-app
@@ -60,9 +60,9 @@ services:
         container_name: bitwarden
         restart: always
         env_file:
-            - /data/bitwarden/config.env
+            - ${EZ_DATA}/bitwarden/config.env
         volumes:
-            - /data/bitwarden:/data/bitwarden
+            - ${EZ_DATA}/bitwarden:/data/bitwarden
         networks:
             - net-app
 networks:

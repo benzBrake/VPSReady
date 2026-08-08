@@ -20,6 +20,8 @@ ENABLE_PUBKEY_AUTH=false
 SET_MAX_AUTH_TRIES=false
 RESTART_SSH=false
 REPO_BASE_URL="${REPO_BASE_URL}"
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
+EZ_DATA="${EZ_DATA:-$(CDPATH= cd -- "${SCRIPT_DIR}/../.." && pwd)}"
 
 # 使用 curl 或 Alpine BusyBox wget 下载文件
 download_file() {
@@ -105,8 +107,8 @@ while getopts ":krPAMSb:u:" opt; do
 done
 shift $((OPTIND -1))
 
-if [ -f /data/.profile ]; then
-    . /data/.profile
+if [ -f "${EZ_DATA}/.profile" ]; then
+    . "${EZ_DATA}/.profile"
 fi
 
 if [ "${NOT_INSTALL_SSH_KEY}" = true ]; then
@@ -143,16 +145,16 @@ if [ "${INSTALL_KEY}" = true ]; then
     PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
     PROJECT_KEY_FILE="${PROJECT_ROOT}/pub/xiaoji.pub"
 
-    # 优先级：环境变量 > 项目目录 > /data挂载 > 网络下载
+    # 优先级：环境变量 > 项目目录 > EZ_DATA 挂载 > 网络下载
     if [ -n "${SSHKEY}" ]; then
         echo "Using SSH public key from environment..."
         printf '%s\n' "${SSHKEY}" > "${PUBKeyFile}"
     elif [ -f "${PROJECT_KEY_FILE}" ]; then
         echo "Using project public key..."
         cp "${PROJECT_KEY_FILE}" "${PUBKeyFile}" >/dev/null
-    elif [ -f /data/pub/xiaoji.pub ]; then
+    elif [ -f "${EZ_DATA}/pub/xiaoji.pub" ]; then
         echo "Using mounted public key..."
-        cp /data/pub/xiaoji.pub "${PUBKeyFile}" >/dev/null
+        cp "${EZ_DATA}/pub/xiaoji.pub" "${PUBKeyFile}" >/dev/null
     else
         echo "Downloading public key from mirror..."
         if ! download_file "${KEY_URL}" "${PUBKeyFile}" || [ ! -s "${PUBKeyFile}" ]; then

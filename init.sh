@@ -5,6 +5,9 @@ SCRIPT_DIR=$(
     pwd
 )
 
+EZ_DATA="${EZ_DATA:-${SCRIPT_DIR}}"
+export EZ_DATA
+
 . "${SCRIPT_DIR}"/lib/common.sh
 
 INTERACTIVE=false
@@ -774,8 +777,8 @@ install_web_server() {
         nginx)
             info "Installing Nginx"
             warn_web_server_conflicts nginx
-            if [ -f /data/scripts/install/nginx.sh ]; then
-                /data/scripts/install/nginx.sh
+            if [ -f "${EZ_DATA}/scripts/install/nginx.sh" ]; then
+                "${EZ_DATA}/scripts/install/nginx.sh"
             else
                 run_remote_script bash "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/nginx.sh"
             fi
@@ -783,8 +786,8 @@ install_web_server() {
         caddy)
             info "Installing Caddy"
             warn_web_server_conflicts caddy
-            if [ -f /data/scripts/install/caddy.sh ]; then
-                /data/scripts/install/caddy.sh
+            if [ -f "${EZ_DATA}/scripts/install/caddy.sh" ]; then
+                "${EZ_DATA}/scripts/install/caddy.sh"
             else
                 run_remote_script bash "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/caddy.sh"
             fi
@@ -800,10 +803,10 @@ if [ -n "${MIRROR}" ]; then
     # 使用sed在末尾添加斜杠
     MIRROR="${MIRROR}/"
     export GH_MIRROR="${MIRROR}"
-    if [ -f /data/.profile ]; then
-        sed -i "s@^export GH_MIRROR=.*@export GH_MIRROR=${MIRROR}@" /data/.profile
+    if [ -f "${EZ_DATA}/.profile" ]; then
+        sed -i "s@^export GH_MIRROR=.*@export GH_MIRROR=${MIRROR}@" "${EZ_DATA}/.profile"
     else
-        echo "export GH_MIRROR=${MIRROR}" >>/data/.profile
+        echo "export GH_MIRROR=${MIRROR}" >>"${EZ_DATA}/.profile"
     fi
 fi
 # 1.安装基础软件包
@@ -859,23 +862,23 @@ else
             # 兼容 Scaleway
             # 添加计划任务
             if [ -n "$(command -v crontab)" ]; then
-                if ! crontab -l | grep -q "/data/scripts/configure/ssh_key.sh"; then
+                if ! crontab -l | grep -q "${EZ_DATA}/scripts/configure/ssh_key.sh"; then
                     (
                         crontab -l 2>/dev/null
-                        echo "@reboot sh /data/scripts/configure/ssh_key.sh -k"
+                        echo "@reboot sh ${EZ_DATA}/scripts/configure/ssh_key.sh -k"
                     ) | crontab -
                 fi
             fi
             if [ "${NOT_CHANGE_SSH_PORT}" != "true" ]; then
-                if [ -f /data/.profile ]; then
-                    sed -i '/^NOT_CHANGE_SSH_PORT/d' /data/.profile
+                if [ -f "${EZ_DATA}/.profile" ]; then
+                    sed -i '/^NOT_CHANGE_SSH_PORT/d' "${EZ_DATA}/.profile"
                 fi
-                echo "export NOT_CHANGE_SSH_PORT=true" >>/data/.profile
+                echo "export NOT_CHANGE_SSH_PORT=true" >>"${EZ_DATA}/.profile"
                 if [ -n "$(command -v crontab)" ]; then
-                    if ! crontab -l | grep -q "/data/scripts/configure/ssh_port.sh"; then
+                    if ! crontab -l | grep -q "${EZ_DATA}/scripts/configure/ssh_port.sh"; then
                         (
                             crontab -l 2>/dev/null
-                            echo "@reboot /data/scripts/configure/ssh_port.sh"
+                            echo "@reboot ${EZ_DATA}/scripts/configure/ssh_port.sh"
                         ) | crontab -
                     fi
                 fi
@@ -887,7 +890,7 @@ else
             info "Using SSH public key from environment for this run"
         fi
 
-        /data/scripts/configure/ssh_port.sh
+        "${EZ_DATA}/scripts/configure/ssh_port.sh"
     else
         info "Skip SSH hardening"
     fi
@@ -897,9 +900,9 @@ else
     # 5.安装 Docker
     if [ "${INSTALL_DOCKER}" = true ] && [ -z "$(command -v docker)" ]; then
         info "Installing Docker"
-        if [ -f /data/scripts/install/docker.sh ]; then
-            chmod +x /data/scripts/install/docker.sh
-            /data/scripts/install/docker.sh
+        if [ -f "${EZ_DATA}/scripts/install/docker.sh" ]; then
+            chmod +x "${EZ_DATA}/scripts/install/docker.sh"
+            "${EZ_DATA}/scripts/install/docker.sh"
         else
             run_remote_script bash "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/docker.sh"
         fi
@@ -918,11 +921,11 @@ else
         info "Skip install Docker"
     fi
     # 创建默认 Docker Compose 配置
-    if [ "${INSTALL_DOCKER}" = true ] && [ ! -f /data/docker-compose.yml ] && [ -f /data/.docker-compose.yml.demo ]; then
-        if cp -f /data/.docker-compose.yml.demo /data/docker-compose.yml >/dev/null; then
-            info "Create /data/docker-compose.yml"
+    if [ "${INSTALL_DOCKER}" = true ] && [ ! -f "${EZ_DATA}/docker-compose.yml" ] && [ -f "${EZ_DATA}/.docker-compose.yml.demo" ]; then
+        if cp -f "${EZ_DATA}/.docker-compose.yml.demo" "${EZ_DATA}/docker-compose.yml" >/dev/null; then
+            info "Create ${EZ_DATA}/docker-compose.yml"
         else
-            err "Cannot create /data/docker-compose.yml"
+            err "Cannot create ${EZ_DATA}/docker-compose.yml"
         fi
     fi
     install_web_server
@@ -931,28 +934,29 @@ fi
 # 6.配置 vim
 if [ ! -f /root/.vimrc ]; then
     info "Configure vim"
-        ln -sf /data/config/.vimrc /root/.vimrc
+        ln -sf "${EZ_DATA}/config/.vimrc" /root/.vimrc
 fi
 
 # 7.安装 ez-bash
-if [ ! -d /data/.ez ]; then
-    git clone "${MIRROR}https://github.com/benzBrake/.ez-bash" /data/.ez
-    chmod +x /data/.ez/*.bash
-    chmod +x /data/.ez/*/*.bash
+if [ ! -d "${EZ_DATA}/.ez" ]; then
+    git clone "${MIRROR}https://github.com/benzBrake/.ez-bash" "${EZ_DATA}/.ez"
+    chmod +x "${EZ_DATA}/.ez"/*.bash
+    chmod +x "${EZ_DATA}/.ez"/*/*.bash
 fi
 
 # 8.环境变量
-if grep "/data/.ezenv" /root/.bashrc >/dev/null; then
+if grep "${EZ_DATA}/.ezenv" /root/.bashrc >/dev/null; then
     info "Utils env is set."
 else
     info "Setting utils env."
-    echo '. "/data/.ezenv"' >>/root/.bashrc
+    echo "export EZ_DATA=\"${EZ_DATA}\"" >>/root/.bashrc
+    echo ". \"${EZ_DATA}/.ezenv\"" >>/root/.bashrc
 fi
 
 # 9.安装 Rclone
 if [ "${INSTALL_RCLONE}" = true ]; then
     if [ -z "$(command -v rclone)" ]; then
-        mkdir -p /data/rclone
+        mkdir -p "${EZ_DATA}/rclone"
         if [ -f "${SCRIPT_DIR}/scripts/install/rclone.sh" ]; then
             "${SCRIPT_DIR}/scripts/install/rclone.sh"
         else
@@ -969,8 +973,8 @@ fi
 if [ "${INSTALL_GLOW}" = true ]; then
     if [ -z "$(command -v glow)" ]; then
         info "Installing Glow"
-        if [ -f /data/scripts/install/glow.sh ]; then
-            sh /data/scripts/install/glow.sh
+        if [ -f "${EZ_DATA}/scripts/install/glow.sh" ]; then
+            sh "${EZ_DATA}/scripts/install/glow.sh"
         else
             run_remote_script bash "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/glow.sh"
         fi
@@ -1029,9 +1033,9 @@ fi
 
 # 15.安装 acme.sh
 if [ "${INSTALL_ACME}" = true ]; then
-    if [ ! -d /data/.acme.sh ]; then
+    if [ ! -d "${EZ_DATA}/.acme.sh" ]; then
         run_remote_script sh https://get.acme.sh
-        MIRROR="${MIRROR}" LET_MAIL="${LET_MAIL}" sh /data/scripts/install/acme.sh
+        MIRROR="${MIRROR}" LET_MAIL="${LET_MAIL}" EZ_DATA="${EZ_DATA}" sh "${EZ_DATA}/scripts/install/acme.sh"
     fi
 else
     info "Skip install acme.sh"

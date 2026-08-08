@@ -93,6 +93,15 @@ chmod +x ./init.sh
 
 ## 高级配置
 
+### 自定义数据目录
+
+脚本使用 `EZ_DATA` 作为宿主机数据目录。初始化脚本默认使用自身所在目录，独立模块默认使用仓库根目录；也可以显式覆盖：
+
+```bash
+EZ_DATA=/srv/vpsready ./init.sh
+EZ_DATA=/srv/vpsready sh scripts/install/mysql.sh
+```
+
 ### 自定义 SSH 公钥
 
 ```bash
@@ -351,9 +360,9 @@ chmod +x init.sh scripts/install/*.sh scripts/configure/*.sh scripts/tools/*.sh
 | Codex CLI | `sh scripts/install/codex.sh` | `NPM_REGISTRY`、`CODEX_BASE_URL`、`CODEX_TOKEN`；默认 npmmirror；安装 `@openai/codex` |
 | Claude Code CLI | `sh scripts/install/claude_code.sh` | `NPM_REGISTRY`、`CLAUDE_BASE_URL`、`CLAUDE_TOKEN`；默认 npmmirror；安装 `@anthropic-ai/claude-code` |
 | tcping | `sh scripts/install/tcping.sh` | `GH_MIRROR`、`MIRROR`、`TCPING_VERSION`、`TCPING_INSTALL_DIR`、`TCPING_FORCE_REINSTALL` |
-| Nginx | `sh scripts/install/nginx.sh` | 使用 `/data/web` 配置 |
+| Nginx | `sh scripts/install/nginx.sh` | 使用 `${EZ_DATA}/web` 配置 |
 
-MySQL 模块要求 Docker 和 Docker Compose 均已可用；缺少 Docker 时会直接跳过。默认在 `/data/mysql` 写入 `docker-compose.yml`、`.env` 和数据库数据目录，完成后会输出 root 密码。
+MySQL 模块要求 Docker 和 Docker Compose 均已可用；缺少 Docker 时会直接跳过。默认在 `${EZ_DATA}/mysql` 写入 `docker-compose.yml`、`.env` 和数据库数据目录，完成后会输出 root 密码。
 
 远程完整命令：
 
@@ -425,7 +434,7 @@ curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/conf
 以下命令均可直接复制。将路径、实例名或 token 文件路径替换为自己的值。
 
 ```bash
-# 备份 /data，并保留默认配置
+# 备份 EZ_DATA，并保留默认配置
 sudo sh scripts/tools/backup.sh
 
 # 安装 cloudflared（未安装时）并显示版本
@@ -437,8 +446,8 @@ sudo sh scripts/tools/cloudflare_tunnel.sh add blog
 # 从文件读取 token 创建名为 api 的 Tunnel 实例
 sudo sh scripts/tools/cloudflare_tunnel.sh add api --token-file /root/api-tunnel-token
 
-# 查找 /data 下大于 500 MB 的文件
-sh scripts/tools/find_large_files.sh /data 500
+# 查找 EZ_DATA 下大于 500 MB 的文件
+sh scripts/tools/find_large_files.sh "${EZ_DATA:-$(pwd)}" 500
 ```
 
 远程完整命令：
@@ -448,12 +457,12 @@ sh scripts/tools/find_large_files.sh /data 500
 curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/tools/backup.sh" -o /tmp/vpsready-backup.sh && sudo bash /tmp/vpsready-backup.sh
 curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/tools/cloudflared.sh" -o /tmp/vpsready-cloudflared.sh && sudo sh /tmp/vpsready-cloudflared.sh --version
 curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/tools/cloudflare_tunnel.sh" -o /tmp/vpsready-cloudflare-tunnel.sh && sudo sh /tmp/vpsready-cloudflare-tunnel.sh add blog
-curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/tools/find_large_files.sh" -o /tmp/vpsready-find-large-files.sh && sh /tmp/vpsready-find-large-files.sh /data 500
+curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/tools/find_large_files.sh" -o /tmp/vpsready-find-large-files.sh && sh /tmp/vpsready-find-large-files.sh "${EZ_DATA:-$(pwd)}" 500
 ```
 
 `backup.sh` 需要先通过环境变量或编辑脚本配置备份目录、数据库和远端存储；其默认的 MySQL 密码占位值不可直接用于生产环境。
 
-`.ezenv` 是部署到 `/data/.ezenv` 的运行时环境文件，会将 `/data/scripts/tools` 加入 `PATH`，并加载 `/data/.ez/ez.bash`。不要把它当作可执行模块运行。
+`.ezenv` 是部署到 `${EZ_DATA}/.ezenv` 的运行时环境文件，会将 `${EZ_DATA}/scripts/tools` 加入 `PATH`，并加载 `${EZ_DATA}/.ez/ez.bash`。加载前必须设置 `EZ_DATA`，不要把它当作可执行模块运行。
 
 ### Cloudflare Tunnel 多实例管理
 
@@ -461,34 +470,34 @@ curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/tool
 
 ```bash
 # 进入交互菜单
-/data/scripts/tools/cloudflare_tunnel.sh
+${EZ_DATA:-$(pwd)}/scripts/tools/cloudflare_tunnel.sh
 
 # 安全地交互输入 token 或粘贴 Cloudflare service install 命令
-/data/scripts/tools/cloudflare_tunnel.sh add blog
+${EZ_DATA:-$(pwd)}/scripts/tools/cloudflare_tunnel.sh add blog
 
 # 从文件读取 token，token 不会出现在进程参数中
-/data/scripts/tools/cloudflare_tunnel.sh add api --token-file /root/api-tunnel-token
+${EZ_DATA:-$(pwd)}/scripts/tools/cloudflare_tunnel.sh add api --token-file /root/api-tunnel-token
 
 # 查看并管理实例
-/data/scripts/tools/cloudflare_tunnel.sh list
-/data/scripts/tools/cloudflare_tunnel.sh status blog
-/data/scripts/tools/cloudflare_tunnel.sh stop blog
-/data/scripts/tools/cloudflare_tunnel.sh start blog
-/data/scripts/tools/cloudflare_tunnel.sh restart blog
+${EZ_DATA:-$(pwd)}/scripts/tools/cloudflare_tunnel.sh list
+${EZ_DATA:-$(pwd)}/scripts/tools/cloudflare_tunnel.sh status blog
+${EZ_DATA:-$(pwd)}/scripts/tools/cloudflare_tunnel.sh stop blog
+${EZ_DATA:-$(pwd)}/scripts/tools/cloudflare_tunnel.sh start blog
+${EZ_DATA:-$(pwd)}/scripts/tools/cloudflare_tunnel.sh restart blog
 
 # 删除本机实例，需要确认；自动化脚本可以使用 --force
-/data/scripts/tools/cloudflare_tunnel.sh remove blog
-/data/scripts/tools/cloudflare_tunnel.sh remove api --force
+${EZ_DATA:-$(pwd)}/scripts/tools/cloudflare_tunnel.sh remove blog
+${EZ_DATA:-$(pwd)}/scripts/tools/cloudflare_tunnel.sh remove api --force
 
 # 创建退出后即失效的 Quick Tunnel
-/data/scripts/tools/cloudflare_tunnel.sh temp http://127.0.0.1:8080
+${EZ_DATA:-$(pwd)}/scripts/tools/cloudflare_tunnel.sh temp http://127.0.0.1:8080
 ```
 
 交互输入支持直接粘贴纯 token，也支持 Cloudflare 控制台提供的 `cloudflared service install <token>`、`cloudflared.exe service install <token>` 及带 `sudo` 的形式。脚本只从严格匹配的命令中提取 token，不会执行粘贴的命令；`--token-file` 指定的文件仍应只包含纯 token。
 
 如果系统安装了 Docker，脚本会为每条 tunnel 创建一个使用 `unless-stopped` 重启策略的独立容器。Docker 已安装但 daemon 不可用时，脚本会报错，不会混用原生模式。如果没有安装 Docker，Debian/Ubuntu 使用 systemd，Alpine 使用 OpenRC，并配置开机启动。
 
-实例数据保存在 `/data/cloudflared/tunnels/<name>`。token 文件权限为 `600`，Docker 容器和系统服务均通过 token 文件启动，不把 token 写入命令参数。实例名称只允许小写字母、数字、下划线和连字符。
+实例数据默认保存在 `${EZ_DATA}/cloudflared/tunnels/<name>`。token 文件权限为 `600`，Docker 容器和系统服务均通过 token 文件启动，不把 token 写入命令参数。实例名称只允许小写字母、数字、下划线和连字符。
 
 `remove` 只停止并删除本机容器或服务以及本地 token，不会删除 Cloudflare 控制台中的 tunnel、DNS、SSL/TLS 或其他远端配置。若创建或启动失败，可以在修复 Docker 或系统服务问题后运行 `start <name>` 重试；需要彻底回滚时运行 `remove <name> --force`。
 

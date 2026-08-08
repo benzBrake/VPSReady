@@ -17,7 +17,8 @@ else
     suc() { echo "[S] $*" >&2; }
 fi
 
-STATE_ROOT="${CF_TUNNEL_STATE_ROOT:-/data/cloudflared/tunnels}"
+EZ_DATA="${EZ_DATA:-$(CDPATH= cd -- "${SCRIPT_DIR}/../.." && pwd)}"
+STATE_ROOT="${CF_TUNNEL_STATE_ROOT:-${EZ_DATA}/cloudflared/tunnels}"
 DOCKER_IMAGE="${CF_TUNNEL_DOCKER_IMAGE:-cloudflare/cloudflared:latest}"
 CLOUDFLARED_BIN="${CLOUDFLARED_BIN:-/usr/local/bin/cloudflared}"
 SYSTEMD_UNIT_DIR="${CF_TUNNEL_SYSTEMD_UNIT_DIR:-/etc/systemd/system}"

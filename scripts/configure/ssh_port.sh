@@ -1,6 +1,8 @@
 #!/usr/bin/env sh
-[ -f "/data/.profile" ] && . /data/.profile
-[ -f "/data/lib/common.sh" ] && . /data/lib/common.sh
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
+EZ_DATA="${EZ_DATA:-$(CDPATH= cd -- "${SCRIPT_DIR}/../.." && pwd)}"
+[ -f "${EZ_DATA}/.profile" ] && . "${EZ_DATA}/.profile"
+[ -f "${EZ_DATA}/lib/common.sh" ] && . "${EZ_DATA}/lib/common.sh"
 
 # 使用 curl 或 Alpine BusyBox wget 下载文件
 download_file() {
@@ -31,8 +33,8 @@ if [ -e "/etc/ssh/sshd_config" ]; then
     # 备份SSH配置
     info "Backup SSH config"
     cp -f /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
-    if [ -f "/data/scripts/configure/ssh_key.sh" ]; then
-        GH_MIRROR="${GH_MIRROR}" sh /data/scripts/configure/ssh_key.sh -k -A -M
+    if [ -f "${EZ_DATA}/scripts/configure/ssh_key.sh" ]; then
+        GH_MIRROR="${GH_MIRROR}" EZ_DATA="${EZ_DATA}" sh "${EZ_DATA}/scripts/configure/ssh_key.sh" -k -A -M
     else
         SSH_KEY_SCRIPT=$(mktemp)
         if ! download_file "${GH_MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/ssh_key.sh" "${SSH_KEY_SCRIPT}"; then

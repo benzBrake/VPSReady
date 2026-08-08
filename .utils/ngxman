@@ -12,14 +12,16 @@
 # Mod From https://github.com/tahaHichri/nginxse-virtualhost-generator/blob/master/nginxse.sh
 ###
 # Config Start #############################
-NGXBaseDir="/data/web"
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
+EZ_DATA="${EZ_DATA:-$(CDPATH= cd -- "${SCRIPT_DIR}/.." && pwd)}"
+NGXBaseDir="${EZ_DATA}/web"
 NGXCfgDir="${NGXBaseDir}/webconf"
 NGXWebDir="${NGXBaseDir}/webapps"
 NGXCrtDir="${NGXBaseDir}/webcert"
 NGXExtDir="${NGXBaseDir}/nginx-extra"
 NGXRwtDir="${NGXBaseDir}/nginx-rewrite"
 NGXDisDir="${NGXBaseDir}/sites-available"
-CMPFileDir="/data/docker-compose.yml"
+CMPFileDir="${EZ_DATA}/docker-compose.yml"
 # Config End ###############################
 
 # OS destribution
@@ -330,8 +332,8 @@ function addHost() {
   for cert_path in "$NGXCrtDir"/*.crt; do
     cert_file=${cert_path##*/}
     key_file="${cert_file%.crt}.key"
-    if [ -f "/data/web/webcert/${key_file}" ]; then
-      dns_names=$(openssl x509 -in "/data/web/webcert/${cert_file}" -text -noout | grep 'DNS:' | sed -e 's/^.*DNS:\([^,]*\).*$/\1/')
+    if [ -f "${EZ_DATA}/web/webcert/${key_file}" ]; then
+      dns_names=$(openssl x509 -in "${EZ_DATA}/web/webcert/${cert_file}" -text -noout | grep 'DNS:' | sed -e 's/^.*DNS:\([^,]*\).*$/\1/')
       for dns_name in $dns_names; do
         if [[ "$server_name" == *"$dns_name"* || "$dns_name" == *".${server_name#*.}" ]]; then
           ssl_detect=true

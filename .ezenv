@@ -1,7 +1,12 @@
-export PATH="${PATH}:/data/scripts/tools"
-export RCLONE_CONFIG=/data/rclone/rclone.conf
-export EZ_HOME="/data/.ez"
-if [ -f "/data/.profile" ]; then
-    . "/data/.profile"
+if [ -z "${EZ_DATA:-}" ]; then
+    echo "EZ_DATA must be set before sourcing .ezenv" >&2
+    return 1 2>/dev/null || exit 1
+fi
+export EZ_DATA
+export PATH="${PATH}:${EZ_DATA}/scripts/tools"
+export RCLONE_CONFIG="${RCLONE_CONFIG:-${EZ_DATA}/rclone/rclone.conf}"
+export EZ_HOME="${EZ_HOME:-${EZ_DATA}/.ez}"
+if [ -f "${EZ_DATA}/.profile" ]; then
+    . "${EZ_DATA}/.profile"
 fi
 . "${EZ_HOME}/ez.bash"

@@ -1,5 +1,9 @@
 #!/bin/sh
 
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
+EZ_DATA="${EZ_DATA:-$(CDPATH= cd -- "${SCRIPT_DIR}/../.." && pwd)}"
+ACME_HOME="${EZ_DATA}/.acme.sh"
+
 if [ -z "${LET_MAIL}" ]; then
     LET_MAIL="webmaster@woai.ru"
 fi
@@ -32,22 +36,22 @@ install_cron() {
     echo "Cron installed successfully."
 }
 install_cron
-if [ -d "/data/.acme.sh" ]; then
+if [ -d "${ACME_HOME}" ]; then
     if [ ! -f "$HOME/.bashrc" ]; then
         : > "$HOME/.bashrc"
     fi
-    if ! grep -F '. "/data/.acme.sh/acme.sh.env"' "$HOME/.bashrc" >/dev/null 2>&1; then
-        echo '. "/data/.acme.sh/acme.sh.env"' >>"$HOME/.bashrc"
+    if ! grep -F ". \"${ACME_HOME}/acme.sh.env\"" "$HOME/.bashrc" >/dev/null 2>&1; then
+        echo ". \"${ACME_HOME}/acme.sh.env\"" >>"$HOME/.bashrc"
     fi
     (crontab -u root -l | grep -v "acme.sh") | crontab -u root -
-    crontab -u root -l 2>/dev/null | { cat; echo "0 0 * * * \"/data/.acme.sh\"/acme.sh --cron --home \"/data/.acme.sh\" > /dev/null"; } | crontab -u root -
+    crontab -u root -l 2>/dev/null | { cat; echo "0 0 * * * \"${ACME_HOME}\"/acme.sh --cron --home \"${ACME_HOME}\" > /dev/null"; } | crontab -u root -
 else
     git clone "${MIRROR}https://github.com/acmesh-official/acme.sh.git" /tmp/acme.sh
     cd /tmp/acme.sh
     ./acme.sh --install  \
-    --home /data/.acme.sh \
+    --home "${ACME_HOME}" \
     --accountemail  "${LET_MAIL}"
     rm -rf /tmp/acme.sh
 fi
-. "/data/.acme.sh/acme.sh.env"
-/data/.acme.sh/acme.sh --set-default-ca --server letsencrypt
+. "${ACME_HOME}/acme.sh.env"
+"${ACME_HOME}/acme.sh" --set-default-ca --server letsencrypt
