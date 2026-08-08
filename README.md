@@ -193,6 +193,8 @@ https://dockerproxy.link
 | `DOCKER_INSTALLER_URL` | `https://get.docker.com` | `global` 模式使用的官方安装器地址。 |
 | `DOCKER_REGISTRY_MIRROR` | CN 默认镜像列表（仅 `cn`） | 设置单个 `http://` 或 `https://` 地址覆盖默认列表；设置为 `none` 移除 `registry-mirrors`。 |
 
+检测到命令行或可执行文件位于 `/usr/local/qcloud/` 的腾讯云代理进程时，脚本会自动使用腾讯云 Docker 镜像 `https://mirror.ccs.tencentyun.com`。显式设置 `DOCKER_REGISTRY_MIRROR`（包括 `none`）会覆盖此自动选择。
+
 ```bash
 # 使用 Azure 中国 Docker CE 源
 DOCKER_REGION=cn DOCKER_INSTALL_MIRROR=AzureChinaCloud ./init.sh
@@ -291,6 +293,8 @@ DOCKER_REGION=cn sh scripts/configure/docker_logs.sh
 | `DOCKER_LOG_DRIVER` | `json-file` | 日志驱动类型 |
 | `DOCKER_REGION` | `global` | 设置为 `cn` 时写入 CN 默认镜像加速器。 |
 | `DOCKER_REGISTRY_MIRROR` | - | 单个自定义镜像地址；设为 `none` 移除镜像配置。 |
+
+检测到腾讯云代理进程时，会自动使用腾讯云 Docker 镜像；`DOCKER_REGISTRY_MIRROR` 可覆盖此行为。
 
 ### 安装 SSH 公钥
 
