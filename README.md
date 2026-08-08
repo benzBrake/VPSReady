@@ -345,7 +345,7 @@ chmod +x init.sh scripts/install/*.sh scripts/configure/*.sh scripts/tools/*.sh
 | mise + Node.js LTS | `sh scripts/install/mise.sh` | `MISE_INSTALL_URL` |
 | Codex CLI | `sh scripts/install/codex.sh` | `NPM_REGISTRY`、`CODEX_BASE_URL`、`CODEX_TOKEN`；默认 npmmirror；安装 `@openai/codex` |
 | Claude Code CLI | `sh scripts/install/claude_code.sh` | `NPM_REGISTRY`、`CLAUDE_BASE_URL`、`CLAUDE_TOKEN`；默认 npmmirror；安装 `@anthropic-ai/claude-code` |
-| tcping | `sh scripts/install/tcping.sh` | `TCPING_VERSION`、`TCPING_INSTALL_DIR`、`TCPING_FORCE_REINSTALL` |
+| tcping | `sh scripts/install/tcping.sh` | `GH_MIRROR`、`MIRROR`、`TCPING_VERSION`、`TCPING_INSTALL_DIR`、`TCPING_FORCE_REINSTALL` |
 | Nginx | `sh scripts/install/nginx.sh` | 使用 `/data/web` 配置 |
 
 远程完整命令：

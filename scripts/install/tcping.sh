@@ -17,6 +17,32 @@ TCPING_INSTALL_DIR="${TCPING_INSTALL_DIR:-/usr/local/bin}"
 TCPING_VERSION="${TCPING_VERSION:-}"
 TCPING_FORCE_REINSTALL="${TCPING_FORCE_REINSTALL:-false}"
 
+get_github_mirror_prefix() {
+    GITHUB_MIRROR_PREFIX="${GH_MIRROR:-${MIRROR:-}}"
+    GITHUB_MIRROR_PREFIX=$(printf '%s' "${GITHUB_MIRROR_PREFIX}" | sed 's#/*$##')
+
+    if [ -n "${GITHUB_MIRROR_PREFIX}" ]; then
+        printf '%s/' "${GITHUB_MIRROR_PREFIX}"
+    fi
+}
+
+get_github_url() {
+    GITHUB_URL="${1}"
+    GITHUB_MIRROR_PREFIX=$(get_github_mirror_prefix)
+
+    case "${GITHUB_MIRROR_PREFIX}" in
+        "")
+            printf '%s' "${GITHUB_URL}"
+            ;;
+        https://github.com/|http://github.com/)
+            printf '%s' "${GITHUB_URL}"
+            ;;
+        *)
+            printf '%s%s' "${GITHUB_MIRROR_PREFIX}" "${GITHUB_URL}"
+            ;;
+    esac
+}
+
 detect_platform() {
     if [ "$(uname -s)" != "Linux" ]; then
         err "Only Linux is supported"
@@ -83,7 +109,8 @@ get_release_page() {
         return 0
     fi
 
-    TCPING_RELEASES_PAGE=$(curl -fsSL "https://github.com/${TCPING_REPO}/releases") || {
+    TCPING_RELEASES_URL=$(get_github_url "https://github.com/${TCPING_REPO}/releases")
+    TCPING_RELEASES_PAGE=$(curl -fsSL "${TCPING_RELEASES_URL}") || {
         err "Failed to fetch GitHub Releases page"
         return 1
     }
@@ -102,12 +129,13 @@ get_release_page() {
 
 find_asset_url() {
     TCPING_RELEASE_API="https://api.github.com/repos/${TCPING_REPO}/releases/tags/${TCPING_VERSION}"
-    TCPING_RELEASE_JSON=$(curl -fsSL "${TCPING_RELEASE_API}") || {
-        err "Failed to fetch release metadata: ${TCPING_RELEASE_API}"
+    TCPING_RELEASE_API_URL=$(get_github_url "${TCPING_RELEASE_API}")
+    TCPING_RELEASE_JSON=$(curl -fsSL "${TCPING_RELEASE_API_URL}") || {
+        err "Failed to fetch release metadata: ${TCPING_RELEASE_API_URL}"
         return 1
     }
 
-    TCPING_ASSET_URL=$(printf '%s\n' "${TCPING_RELEASE_JSON}" |
+    TCPING_GITHUB_ASSET_URL=$(printf '%s\n' "${TCPING_RELEASE_JSON}" |
         sed -n 's/.*"browser_download_url"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' |
         while IFS= read -r url; do
             name=$(printf '%s' "${url##*/}" | tr '[:upper:]' '[:lower:]')
@@ -162,11 +190,12 @@ find_asset_url() {
             break
         done | head -n 1)
 
-    if [ -z "${TCPING_ASSET_URL}" ]; then
+    if [ -z "${TCPING_GITHUB_ASSET_URL}" ]; then
         err "No tcping asset matches ${TCPING_OS}/${TCPING_ARCH}"
         return 1
     fi
 
+    TCPING_ASSET_URL=$(get_github_url "${TCPING_GITHUB_ASSET_URL}")
     info "Selected asset: ${TCPING_ASSET_URL##*/}"
 }
 
@@ -178,9 +207,16 @@ install_asset() {
     TCPING_DOWNLOAD="${TCPING_TMP_DIR}/${TCPING_ASSET_URL##*/}"
 
     if ! curl -fL "${TCPING_ASSET_URL}" -o "${TCPING_DOWNLOAD}" || [ ! -s "${TCPING_DOWNLOAD}" ]; then
-        err "Failed to download tcping asset"
-        rm -rf "${TCPING_TMP_DIR}"
-        return 1
+        if [ -n "$(get_github_mirror_prefix)" ]; then
+            warn "Mirror download failed, trying direct GitHub Releases"
+            TCPING_ASSET_URL="${TCPING_GITHUB_ASSET_URL}"
+        fi
+
+        if ! curl -fL "${TCPING_ASSET_URL}" -o "${TCPING_DOWNLOAD}" || [ ! -s "${TCPING_DOWNLOAD}" ]; then
+            err "Failed to download tcping asset"
+            rm -rf "${TCPING_TMP_DIR}"
+            return 1
+        fi
     fi
 
     case "${TCPING_DOWNLOAD}" in
