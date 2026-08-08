@@ -933,8 +933,12 @@ fi
 # 9.安装 Rclone
 if [ "${INSTALL_RCLONE}" = true ]; then
     if [ -z "$(command -v rclone)" ]; then
-        mkdir /data/rclone
-        run_remote_script bash https://rclone.org/install.sh
+        mkdir -p /data/rclone
+        if [ -f "${SCRIPT_DIR}/scripts/install/rclone.sh" ]; then
+            "${SCRIPT_DIR}/scripts/install/rclone.sh"
+        else
+            run_remote_script bash "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/rclone.sh"
+        fi
     else
         info "Rclone already installed, skip"
     fi
