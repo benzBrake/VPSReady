@@ -3,7 +3,8 @@
 /.profile
 /acme.sh
 /docker-compose.yml
-/web
+/web/*
+!/web/webroot/
 
 # 环境配置
 .env
