@@ -341,6 +341,7 @@ chmod +x init.sh scripts/install/*.sh scripts/configure/*.sh scripts/tools/*.sh
 | ACME SSL | `sh scripts/install/acme.sh` | `MIRROR`、`LET_MAIL` |
 | Caddy | `sh scripts/install/caddy.sh` | `MIRROR`、`GH_MIRROR`、`CADDY_*`、`DOWNLOAD_URL` |
 | Docker | `sh scripts/install/docker.sh` | `DOCKER_REGION`、`DOCKER_INSTALL_MIRROR`、`DOCKER_REGISTRY_MIRROR`、`DOCKER_*` |
+| MySQL | `sh scripts/install/mysql.sh` | `MYSQL_ROOT_PASSWORD`、`MYSQL_CONTAINER_NAME`、`MYSQL_IMAGE`、`MYSQL_DATA_DIR`、`MYSQL_PORT` |
 | Glow | `sh scripts/install/glow.sh` | `GLOW_VERSION`、`GLOW_INSTALL_DIR`、`GLOW_MIRROR` |
 | mise + Node.js LTS | `sh scripts/install/mise.sh` | `MISE_INSTALL_URL` |
 | Codex CLI | `sh scripts/install/codex.sh` | `NPM_REGISTRY`、`CODEX_BASE_URL`、`CODEX_TOKEN`；默认 npmmirror；安装 `@openai/codex` |
@@ -348,12 +349,15 @@ chmod +x init.sh scripts/install/*.sh scripts/configure/*.sh scripts/tools/*.sh
 | tcping | `sh scripts/install/tcping.sh` | `GH_MIRROR`、`MIRROR`、`TCPING_VERSION`、`TCPING_INSTALL_DIR`、`TCPING_FORCE_REINSTALL` |
 | Nginx | `sh scripts/install/nginx.sh` | 使用 `/data/web` 配置 |
 
+MySQL 模块要求 Docker 和 Docker Compose 均已可用；缺少 Docker 时会直接跳过。默认在 `/data/mysql` 写入 `docker-compose.yml`、`.env` 和数据库数据目录，完成后会输出 root 密码。
+
 远程完整命令：
 
 ```bash
 curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/acme.sh" | sh
 curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/caddy.sh" | sh
 curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/docker.sh" | sh
+curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/mysql.sh" | sh
 curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/glow.sh" | sh
 curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/mise.sh" | sh
 curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/codex.sh" | sh
