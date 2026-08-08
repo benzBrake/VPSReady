@@ -44,14 +44,28 @@ install_mise() {
     fi
 
     info "Installing mise"
+    MISE_INSTALLER=$(mktemp) || return 1
     if command -v curl >/dev/null 2>&1; then
-        curl -fsSL "${MISE_INSTALL_URL}" | sh
+        if ! curl -fL "${MISE_INSTALL_URL}" -o "${MISE_INSTALLER}"; then
+            rm -f "${MISE_INSTALLER}"
+            return 1
+        fi
     elif command -v wget >/dev/null 2>&1; then
-        wget -qO- "${MISE_INSTALL_URL}" | sh
+        if ! wget -O "${MISE_INSTALLER}" "${MISE_INSTALL_URL}"; then
+            rm -f "${MISE_INSTALLER}"
+            return 1
+        fi
     else
         err "Neither curl nor wget is available"
+        rm -f "${MISE_INSTALLER}"
         return 1
     fi
+
+    if ! sh "${MISE_INSTALLER}"; then
+        rm -f "${MISE_INSTALLER}"
+        return 1
+    fi
+    rm -f "${MISE_INSTALLER}"
 
     if ! find_mise; then
         err "mise installation verification failed"

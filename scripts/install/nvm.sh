@@ -57,7 +57,7 @@ install_nvm() {
 
     info "Installing NVM"
     TMP_INSTALLER=$(mktemp)
-    if ! curl -fsSL "${NVM_INSTALL_URL}" -o "${TMP_INSTALLER}"; then
+    if ! curl -fL "${NVM_INSTALL_URL}" -o "${TMP_INSTALLER}"; then
         err "Failed to download the NVM installer"
         return 1
     fi

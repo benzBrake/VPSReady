@@ -273,10 +273,10 @@ sudo systemctl restart docker
 
 ```bash
 # 下载并运行脚本
-sh -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/docker_logs.sh" -o -)"
+sh -c "$(curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/docker_logs.sh" -o -)"
 
 # 或使用环境变量自定义配置
-DOCKER_LOG_MAX_SIZE=50m DOCKER_LOG_MAX_FILE=5 sh -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/docker_logs.sh" -o -)"
+DOCKER_LOG_MAX_SIZE=50m DOCKER_LOG_MAX_FILE=5 sh -c "$(curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/docker_logs.sh" -o -)"
 
 # 配置 Docker CN Hub 镜像加速器
 DOCKER_REGION=cn sh scripts/configure/docker_logs.sh
@@ -295,7 +295,7 @@ DOCKER_REGION=cn sh scripts/configure/docker_logs.sh
 ### 安装 SSH 公钥
 
 ```bash
-bash -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/ssh_key.sh" -o -)"
+bash -c "$(curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/ssh_key.sh" -o -)"
 ```
 
 默认只安装或更新 `authorized_keys`，不会修改 `sshd_config`。
@@ -316,13 +316,13 @@ bash -c "$(curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/
 例如：
 
 ```bash
-curl -sSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/ssh_key.sh" | sh -s -- -k -P -A -M -S
+curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/ssh_key.sh" | sh -s -- -k -P -A -M -S
 ```
 
 如果脚本本身是通过 CDN 或镜像地址直接管道执行，公钥地址也要一并显式传入，因为 `curl | sh` 无法让脚本自动知道自己的来源 URL。例如 `jsdmirror`：
 
 ```bash
-curl -sSL "https://cdn.jsdmirror.com/gh/benzBrake/VPSReady@main/scripts/configure/ssh_key.sh" | sh -s -- -k -b "https://cdn.jsdmirror.com/gh/benzBrake/VPSReady@main"
+curl -fL "https://cdn.jsdmirror.com/gh/benzBrake/VPSReady@main/scripts/configure/ssh_key.sh" | sh -s -- -k -b "https://cdn.jsdmirror.com/gh/benzBrake/VPSReady@main"
 ```
 
 ### 所有独立模块
@@ -351,15 +351,15 @@ chmod +x init.sh scripts/install/*.sh scripts/configure/*.sh scripts/tools/*.sh
 远程完整命令：
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/acme.sh" | sh
-curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/caddy.sh" | sh
-curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/docker.sh" | sh
-curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/glow.sh" | sh
-curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/mise.sh" | sh
-curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/codex.sh" | sh
-curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/claude_code.sh" | sh
-curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/nginx.sh" | sh
-curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/tcping.sh" | sh
+curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/acme.sh" | sh
+curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/caddy.sh" | sh
+curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/docker.sh" | sh
+curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/glow.sh" | sh
+curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/mise.sh" | sh
+curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/codex.sh" | sh
+curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/claude_code.sh" | sh
+curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/nginx.sh" | sh
+curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/tcping.sh" | sh
 ```
 
 mise 会默认安装最新 LTS 版本的 Node.js，并将其设为全局版本，也可以使用 `mise run <task>` 执行项目任务。可使用以下命令切换 Node.js 版本：
@@ -406,10 +406,10 @@ DOCKER_LOG_MAX_SIZE=50m DOCKER_LOG_MAX_FILE=5 \
 远程完整命令：
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/docker_iptables.sh" | sh
-curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/docker_logs.sh" | sh
-curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/ssh_key.sh" | sh -s -- -k
-curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/ssh_port.sh" | sh
+curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/docker_iptables.sh" | sh
+curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/docker_logs.sh" | sh
+curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/ssh_key.sh" | sh -s -- -k
+curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/configure/ssh_port.sh" | sh
 ```
 
 #### 工具模块
@@ -437,10 +437,10 @@ sh scripts/tools/find_large_files.sh /data 500
 
 ```bash
 # 下载到临时文件后执行，避免远程脚本依赖相对路径时失效
-curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/tools/backup.sh" -o /tmp/vpsready-backup.sh && sudo bash /tmp/vpsready-backup.sh
-curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/tools/cloudflared.sh" -o /tmp/vpsready-cloudflared.sh && sudo sh /tmp/vpsready-cloudflared.sh --version
-curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/tools/cloudflare_tunnel.sh" -o /tmp/vpsready-cloudflare-tunnel.sh && sudo sh /tmp/vpsready-cloudflare-tunnel.sh add blog
-curl -fsSL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/tools/find_large_files.sh" -o /tmp/vpsready-find-large-files.sh && sh /tmp/vpsready-find-large-files.sh /data 500
+curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/tools/backup.sh" -o /tmp/vpsready-backup.sh && sudo bash /tmp/vpsready-backup.sh
+curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/tools/cloudflared.sh" -o /tmp/vpsready-cloudflared.sh && sudo sh /tmp/vpsready-cloudflared.sh --version
+curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/tools/cloudflare_tunnel.sh" -o /tmp/vpsready-cloudflare-tunnel.sh && sudo sh /tmp/vpsready-cloudflare-tunnel.sh add blog
+curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/tools/find_large_files.sh" -o /tmp/vpsready-find-large-files.sh && sh /tmp/vpsready-find-large-files.sh /data 500
 ```
 
 `backup.sh` 需要先通过环境变量或编辑脚本配置备份目录、数据库和远端存储；其默认的 MySQL 密码占位值不可直接用于生产环境。
@@ -515,7 +515,7 @@ nameserver 2a03:7900:2:0:31:3:104:161
 #### 方案 2: 使用 WARP
 
 ```bash
-MIRROR=https://ghmirror.pp.ua bash <(curl -fsSL https://ghmirror.pp.ua/https://github.com/benzBrake/warp.sh/raw/main/warp.sh) 4
+MIRROR=https://ghmirror.pp.ua bash <(curl -fL https://ghmirror.pp.ua/https://github.com/benzBrake/warp.sh/raw/main/warp.sh) 4
 ```
 
 ## 安全注意事项

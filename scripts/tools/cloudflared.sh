@@ -94,12 +94,12 @@ download_cloudflared_binary() {
 
     # 下载文件
     if command -v wget >/dev/null 2>&1; then
-        if ! wget -q -O "${TEMP_FILE}" "${DOWNLOAD_URL}"; then
+        if ! wget -O "${TEMP_FILE}" "${DOWNLOAD_URL}"; then
             err "Failed to download cloudflared with wget"
             return 1
         fi
     elif command -v curl >/dev/null 2>&1; then
-        if ! curl -fsSL "${DOWNLOAD_URL}" -o "${TEMP_FILE}"; then
+        if ! curl -fL "${DOWNLOAD_URL}" -o "${TEMP_FILE}"; then
             err "Failed to download cloudflared with curl"
             return 1
         fi

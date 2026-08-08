@@ -26,6 +26,30 @@ GLOW_MIRROR=${GLOW_MIRROR:-https://github.com}
 download_file() {
     DOWNLOAD_SOURCE_URL="${1}"
     DOWNLOAD_DESTINATION="${2}"
+    DOWNLOAD_QUIET="${3:-false}"
+
+    if [ "${DOWNLOAD_DESTINATION}" = /dev/null ] || [ "${DOWNLOAD_QUIET}" = true ]; then
+        if command -v curl >/dev/null 2>&1; then
+            curl -fsSL "${DOWNLOAD_SOURCE_URL}" -o "${DOWNLOAD_DESTINATION}"
+        elif command -v wget >/dev/null 2>&1; then
+            wget -qO "${DOWNLOAD_DESTINATION}" "${DOWNLOAD_SOURCE_URL}"
+        else
+            err "Neither curl nor wget is available"
+            return 1
+        fi
+    elif command -v curl >/dev/null 2>&1; then
+        curl -fL "${DOWNLOAD_SOURCE_URL}" -o "${DOWNLOAD_DESTINATION}"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -O "${DOWNLOAD_DESTINATION}" "${DOWNLOAD_SOURCE_URL}"
+    else
+        err "Neither curl nor wget is available"
+        return 1
+    fi
+}
+
+download_metadata() {
+    DOWNLOAD_SOURCE_URL="${1}"
+    DOWNLOAD_DESTINATION="${2}"
 
     if command -v curl >/dev/null 2>&1; then
         curl -fsSL "${DOWNLOAD_SOURCE_URL}" -o "${DOWNLOAD_DESTINATION}"
@@ -131,14 +155,14 @@ download_glow() {
         BASE_URL="${GLOW_MIRROR}/charmbracelet/glow/releases/latest/download"
         # 获取最新版本号（用于构建文件名）
         RELEASE_METADATA=$(mktemp)
-        if download_file "${GLOW_MIRROR}/charmbracelet/glow/releases/latest" "${RELEASE_METADATA}"; then
+        if download_metadata "${GLOW_MIRROR}/charmbracelet/glow/releases/latest" "${RELEASE_METADATA}"; then
             ACTUAL_VERSION=$(grep -o 'tag/[vV][0-9][^"]*' "${RELEASE_METADATA}" | sed 's/tag\///' | head -1)
         fi
         rm -f "${RELEASE_METADATA}"
         if [ -z "${ACTUAL_VERSION}" ]; then
             # 备选方案：尝试从 API 获取
             RELEASE_METADATA=$(mktemp)
-            if download_file "https://api.github.com/repos/charmbracelet/glow/releases/latest" "${RELEASE_METADATA}"; then
+            if download_metadata "https://api.github.com/repos/charmbracelet/glow/releases/latest" "${RELEASE_METADATA}"; then
                 ACTUAL_VERSION=$(grep '"tag_name"' "${RELEASE_METADATA}" | sed -E 's/.*"([^"]+)".*/\1/')
             fi
             rm -f "${RELEASE_METADATA}"
@@ -301,8 +325,5 @@ install_glow() {
 # 主流程
 # ====================================
 
-# 如果直接运行此脚本，执行安装
-if [ "$(basename "$0")" = "glow.sh" ]; then
-    install_glow
-    exit $?
-fi
+install_glow
+exit $?

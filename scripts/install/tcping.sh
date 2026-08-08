@@ -177,7 +177,7 @@ install_asset() {
     }
     TCPING_DOWNLOAD="${TCPING_TMP_DIR}/${TCPING_ASSET_URL##*/}"
 
-    if ! curl -fsSL "${TCPING_ASSET_URL}" -o "${TCPING_DOWNLOAD}" || [ ! -s "${TCPING_DOWNLOAD}" ]; then
+    if ! curl -fL "${TCPING_ASSET_URL}" -o "${TCPING_DOWNLOAD}" || [ ! -s "${TCPING_DOWNLOAD}" ]; then
         err "Failed to download tcping asset"
         rm -rf "${TCPING_TMP_DIR}"
         return 1

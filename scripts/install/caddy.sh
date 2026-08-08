@@ -40,6 +40,30 @@ get_github_mirror_prefix() {
 download_file() {
     DOWNLOAD_SOURCE_URL="${1}"
     DOWNLOAD_DESTINATION="${2}"
+    DOWNLOAD_QUIET="${3:-false}"
+
+    if [ "${DOWNLOAD_DESTINATION}" = /dev/null ] || [ "${DOWNLOAD_QUIET}" = true ]; then
+        if command -v curl >/dev/null 2>&1; then
+            curl -fsSL "${DOWNLOAD_SOURCE_URL}" -o "${DOWNLOAD_DESTINATION}"
+        elif command -v wget >/dev/null 2>&1; then
+            wget -qO "${DOWNLOAD_DESTINATION}" "${DOWNLOAD_SOURCE_URL}"
+        else
+            err "Neither curl nor wget is available"
+            return 1
+        fi
+    elif command -v curl >/dev/null 2>&1; then
+        curl -fL "${DOWNLOAD_SOURCE_URL}" -o "${DOWNLOAD_DESTINATION}"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -O "${DOWNLOAD_DESTINATION}" "${DOWNLOAD_SOURCE_URL}"
+    else
+        err "Neither curl nor wget is available"
+        return 1
+    fi
+}
+
+download_metadata() {
+    DOWNLOAD_SOURCE_URL="${1}"
+    DOWNLOAD_DESTINATION="${2}"
 
     if command -v curl >/dev/null 2>&1; then
         curl -fsSL "${DOWNLOAD_SOURCE_URL}" -o "${DOWNLOAD_DESTINATION}"
@@ -104,7 +128,7 @@ get_latest_release() {
 
     # 尝试使用 GitHub API 获取最新 release
     RELEASE_METADATA=$(mktemp) || return 1
-    if ! download_file "https://api.github.com/repos/${CADDY_REPO}/releases/latest" "${RELEASE_METADATA}"; then
+    if ! download_metadata "https://api.github.com/repos/${CADDY_REPO}/releases/latest" "${RELEASE_METADATA}"; then
         rm -f "${RELEASE_METADATA}"
         err "Failed to fetch release information"
         return 1

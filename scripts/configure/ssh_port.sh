@@ -6,11 +6,21 @@
 download_file() {
     DOWNLOAD_SOURCE_URL="${1}"
     DOWNLOAD_DESTINATION="${2}"
+    DOWNLOAD_QUIET="${3:-false}"
 
-    if command -v curl >/dev/null 2>&1; then
-        curl -fsSL "${DOWNLOAD_SOURCE_URL}" -o "${DOWNLOAD_DESTINATION}"
+    if [ "${DOWNLOAD_DESTINATION}" = /dev/null ] || [ "${DOWNLOAD_QUIET}" = true ]; then
+        if command -v curl >/dev/null 2>&1; then
+            curl -fsSL "${DOWNLOAD_SOURCE_URL}" -o "${DOWNLOAD_DESTINATION}"
+        elif command -v wget >/dev/null 2>&1; then
+            wget -qO "${DOWNLOAD_DESTINATION}" "${DOWNLOAD_SOURCE_URL}"
+        else
+            err "Neither curl nor wget is available"
+            return 1
+        fi
+    elif command -v curl >/dev/null 2>&1; then
+        curl -fL "${DOWNLOAD_SOURCE_URL}" -o "${DOWNLOAD_DESTINATION}"
     elif command -v wget >/dev/null 2>&1; then
-        wget -qO "${DOWNLOAD_DESTINATION}" "${DOWNLOAD_SOURCE_URL}"
+        wget -O "${DOWNLOAD_DESTINATION}" "${DOWNLOAD_SOURCE_URL}"
     else
         err "Neither curl nor wget is available"
         return 1

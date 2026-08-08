@@ -690,6 +690,37 @@ install_packages_separately() {
     fi
 }
 
+download_file() {
+    DOWNLOAD_SOURCE_URL="${1}"
+    DOWNLOAD_DESTINATION="${2}"
+
+    if command -v curl >/dev/null 2>&1; then
+        curl -fL "${DOWNLOAD_SOURCE_URL}" -o "${DOWNLOAD_DESTINATION}"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -O "${DOWNLOAD_DESTINATION}" "${DOWNLOAD_SOURCE_URL}"
+    else
+        err "Neither curl nor wget is available"
+        return 1
+    fi
+}
+
+run_remote_script() {
+    REMOTE_SHELL="${1}"
+    REMOTE_URL="${2}"
+    shift 2
+
+    REMOTE_SCRIPT=$(mktemp) || return 1
+    if ! download_file "${REMOTE_URL}" "${REMOTE_SCRIPT}"; then
+        rm -f "${REMOTE_SCRIPT}"
+        return 1
+    fi
+
+    "${REMOTE_SHELL}" "${REMOTE_SCRIPT}" "$@"
+    REMOTE_SCRIPT_RESULT=$?
+    rm -f "${REMOTE_SCRIPT}"
+    return "${REMOTE_SCRIPT_RESULT}"
+}
+
 warn_web_server_conflicts() {
     SELECTED_WEB_SERVER="${1}"
 
@@ -727,7 +758,7 @@ install_web_server() {
             if [ -f /data/scripts/install/nginx.sh ]; then
                 /data/scripts/install/nginx.sh
             else
-                bash -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/nginx.sh" -o -)"
+                run_remote_script bash "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/nginx.sh"
             fi
             ;;
         caddy)
@@ -736,7 +767,7 @@ install_web_server() {
             if [ -f /data/scripts/install/caddy.sh ]; then
                 /data/scripts/install/caddy.sh
             else
-                bash -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/caddy.sh" -o -)"
+                run_remote_script bash "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/caddy.sh"
             fi
             ;;
         none)
@@ -851,7 +882,7 @@ else
             chmod +x /data/scripts/install/docker.sh
             /data/scripts/install/docker.sh
         else
-            bash -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/docker.sh" -o -)"
+            run_remote_script bash "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/docker.sh"
         fi
         # 启动 Docker 服务
         if [ -n "$(command -v systemctl)" ]; then
@@ -903,7 +934,7 @@ fi
 if [ "${INSTALL_RCLONE}" = true ]; then
     if [ -z "$(command -v rclone)" ]; then
         mkdir /data/rclone
-        curl https://rclone.org/install.sh | bash
+        run_remote_script bash https://rclone.org/install.sh
     else
         info "Rclone already installed, skip"
     fi
@@ -916,9 +947,9 @@ if [ "${INSTALL_GLOW}" = true ]; then
     if [ -z "$(command -v glow)" ]; then
         info "Installing Glow"
         if [ -f /data/scripts/install/glow.sh ]; then
-            . /data/scripts/install/glow.sh
+            sh /data/scripts/install/glow.sh
         else
-            bash -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/glow.sh" -o -)"
+            run_remote_script bash "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/glow.sh"
         fi
     else
         info "Glow already installed, skip"
@@ -932,7 +963,7 @@ if [ "${INSTALL_MISE}" = true ]; then
     if [ -f "${SCRIPT_DIR}/scripts/install/mise.sh" ]; then
         "${SCRIPT_DIR}/scripts/install/mise.sh"
     else
-        bash -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/mise.sh" -o -)"
+        run_remote_script bash "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/mise.sh"
     fi
 else
     info "Skip install mise and Node.js LTS"
@@ -944,7 +975,7 @@ if [ "${INSTALL_CODEX}" = true ]; then
     if [ -f "${SCRIPT_DIR}/scripts/install/codex.sh" ]; then
         "${SCRIPT_DIR}/scripts/install/codex.sh"
     else
-        sh -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/codex.sh" -o -)"
+        run_remote_script sh "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/codex.sh"
     fi
 else
     info "Skip install Codex CLI"
@@ -956,7 +987,7 @@ if [ "${INSTALL_CLAUDE_CODE}" = true ]; then
     if [ -f "${SCRIPT_DIR}/scripts/install/claude_code.sh" ]; then
         "${SCRIPT_DIR}/scripts/install/claude_code.sh"
     else
-        sh -c "$(curl -sSL "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/claude_code.sh" -o -)"
+        run_remote_script sh "${MIRROR}https://raw.githubusercontent.com/benzBrake/VPSReady/main/scripts/install/claude_code.sh"
     fi
 else
     info "Skip install Claude Code CLI"
@@ -976,7 +1007,7 @@ fi
 # 15.安装 acme.sh
 if [ "${INSTALL_ACME}" = true ]; then
     if [ ! -d /data/.acme.sh ]; then
-        curl https://get.acme.sh | sh
+        run_remote_script sh https://get.acme.sh
         MIRROR="${MIRROR}" LET_MAIL="${LET_MAIL}" sh /data/scripts/install/acme.sh
     fi
 else
