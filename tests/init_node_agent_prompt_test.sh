@@ -16,6 +16,7 @@ sed -n '/^is_valid_mirror()/,/^}/p' "${ROOT_DIR}/init.sh" >"${FUNCTIONS_FILE}"
 sed -n '/^is_valid_agent_token()/,/^}/p' "${ROOT_DIR}/init.sh" >>"${FUNCTIONS_FILE}"
 sed -n '/^prompt_agent_configuration()/,/^}/p' "${ROOT_DIR}/init.sh" >>"${FUNCTIONS_FILE}"
 sed -n '/^prompt_node_agent_clis()/,/^}/p' "${ROOT_DIR}/init.sh" >>"${FUNCTIONS_FILE}"
+sed -n '/^prompt_mirror_acceleration()/,/^}/p' "${ROOT_DIR}/init.sh" >>"${FUNCTIONS_FILE}"
 . "${FUNCTIONS_FILE}"
 
 grep -F \
@@ -56,6 +57,35 @@ prompt_secret() {
 warn() {
     :
 }
+
+MIRROR_PROMPT_CALLS=""
+prompt_mirror() {
+    MIRROR_PROMPT_CALLS="${MIRROR_PROMPT_CALLS}${MIRROR_PROMPT_CALLS:+|}GitHub"
+}
+prompt_npm_registry() {
+    MIRROR_PROMPT_CALLS="${MIRROR_PROMPT_CALLS}${MIRROR_PROMPT_CALLS:+|}npm"
+}
+
+PROMPT_SEQUENCE="false"
+MIRROR_ACCELERATION=false
+MIRROR="https://mirror.example.test"
+NPM_REGISTRY="https://registry.npmmirror.com"
+DOCKER_REGION=cn
+DOCKER_INSTALL_MIRROR=Aliyun
+DOCKER_REGISTRY_MIRROR="https://docker.example.test"
+prompt_mirror_acceleration
+[ "${MIRROR_PROMPT_CALLS}" = "" ]
+[ "${MIRROR}" = "" ]
+[ "${NPM_REGISTRY}" = "https://registry.npmjs.org" ]
+[ "${DOCKER_REGION}" = global ]
+[ "${DOCKER_INSTALL_MIRROR}" = "" ]
+[ "${DOCKER_REGISTRY_MIRROR+x}" != x ]
+
+PROMPT_SEQUENCE="true"
+MIRROR_PROMPT_CALLS=""
+prompt_mirror_acceleration
+[ "${MIRROR_PROMPT_CALLS}" = "GitHub|npm" ]
+PROMPT_CALLS=""
 
 prompt_agent_configuration "Codex" ""
 [ "${SECRET_PROMPT_CALLS}" -eq 0 ]

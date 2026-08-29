@@ -11,6 +11,7 @@ export EZ_DATA
 . "${SCRIPT_DIR}"/lib/common.sh
 
 INTERACTIVE=false
+MIRROR_ACCELERATION=true
 CONFIGURE_SSH=true
 INSTALL_RCLONE=true
 INSTALL_GLOW=true
@@ -355,6 +356,23 @@ prompt_timezone() {
     done
 }
 
+prompt_mirror_acceleration() {
+    prompt_yes_no "Enable mirror acceleration for downloads and package registries" "${MIRROR_ACCELERATION}"
+    MIRROR_ACCELERATION="${PROMPT_VALUE}"
+
+    if [ "${MIRROR_ACCELERATION}" = true ]; then
+        prompt_mirror
+        prompt_npm_registry
+    else
+        # Keep the non-accelerated path on the upstream services.
+        MIRROR=""
+        NPM_REGISTRY="https://registry.npmjs.org"
+        DOCKER_REGION=global
+        DOCKER_INSTALL_MIRROR=""
+        unset DOCKER_REGISTRY_MIRROR
+    fi
+}
+
 prompt_email() {
     while :; do
         prompt_value "Let's Encrypt account email" "${LET_MAIL}"
@@ -414,6 +432,7 @@ prompt_node_agent_clis() {
 print_summary() {
     printf '\nInitialization summary:\n' >/dev/tty
     printf '  Timezone: %s\n' "${TIMEZONE}" >/dev/tty
+    printf '  Mirror acceleration: %s\n' "${MIRROR_ACCELERATION}" >/dev/tty
     printf '  GitHub mirror: %s\n' "${MIRROR:-direct GitHub}" >/dev/tty
     printf '  npm registry: %s\n' "${NPM_REGISTRY}" >/dev/tty
     printf '  SSH hardening: %s\n' "${CONFIGURE_SSH}" >/dev/tty
@@ -463,8 +482,7 @@ run_interactive_wizard() {
 
     printf 'VPSReady interactive initialization\n\n' >/dev/tty
     prompt_timezone
-    prompt_mirror
-    prompt_npm_registry
+    prompt_mirror_acceleration
 
     printf '%s\n' \
         'SSH hardening installs or updates a public key, disables password login, and can set port 33022.' \
@@ -514,8 +532,12 @@ run_interactive_wizard() {
     INSTALL_MYSQL="${PROMPT_VALUE}"
     prompt_yes_no "Install Docker" "${INSTALL_DOCKER}"
     INSTALL_DOCKER="${PROMPT_VALUE}"
-    if [ "${INSTALL_DOCKER}" = true ]; then
+    if [ "${INSTALL_DOCKER}" = true ] && [ "${MIRROR_ACCELERATION}" = true ]; then
         prompt_docker_region
+    elif [ "${INSTALL_DOCKER}" = true ]; then
+        DOCKER_REGION=global
+        DOCKER_INSTALL_MIRROR=""
+        unset DOCKER_REGISTRY_MIRROR
     fi
     prompt_web_server
     prompt_yes_no "Install Rclone" "${INSTALL_RCLONE}"
