@@ -17,19 +17,22 @@ VPSReady 是一套用于 Debian/Ubuntu/Alpine Linux 的 VPS 初始化脚本集�
 - **Node.js Agent CLI**: 可选安装 Codex CLI 与 Claude Code CLI
 
 <!-- AUTO:tech-stack -->
+
 ## 技术栈
 
-| 层级 | 技术 | 版本 |
-|------|------|------|
-| 脚本语言 | POSIX Shell | - |
-| 支持系统 | Debian/Ubuntu/Alpine | - |
-| 容器化 | Docker | Latest |
-| Web 服务器 | Nginx / Caddy | Latest |
-| SSL 工具 | acme.sh | Latest |
-| 同步工具 | Rclone | Latest |
+| 层级       | 技术                 | 版本   |
+| ---------- | -------------------- | ------ |
+| 脚本语言   | POSIX Shell          | -      |
+| 支持系统   | Debian/Ubuntu/Alpine | -      |
+| 容器化     | Docker               | Latest |
+| Web 服务器 | Nginx / Caddy        | Latest |
+| SSL 工具   | acme.sh              | Latest |
+| 同步工具   | Rclone               | Latest |
+
 <!-- /AUTO:tech-stack -->
 
 <!-- AUTO:directory -->
+
 ## 项目结构
 
 ```
@@ -48,9 +51,11 @@ VPSReady/
 ├── .ezenv              # 运行时环境变量配置
 └── .docker-compose.yml.demo  # Docker Compose 示例
 ```
+
 <!-- /AUTO:directory -->
 
 <!-- AUTO:quick-start -->
+
 ## 快速开始
 
 ### 环境要求
@@ -75,8 +80,9 @@ cd /data
 
 # 3. 交互式初始化
 chmod +x ./init.sh
-./init.sh -i
+bash init.sh -i
 ```
+
 <!-- /AUTO:quick-start -->
 
 ### 交互式初始化
@@ -162,10 +168,10 @@ NPM_REGISTRY=https://npm.example.com sh scripts/install/codex.sh
 
 交互向导中可以分别配置 Codex 与 Claude Code 的 API endpoint。Base URL 留空时不会询问 token；token 留空时也不会保存配置。非交互模式可使用以下变量：
 
-| CLI | Base URL | Token | 保存方式 |
-|-----|----------|-------|----------|
-| Codex | `CODEX_BASE_URL` | `CODEX_TOKEN` | 写入 `~/.codex/config.toml`，再通过 `codex login --with-api-key` 保存 token。 |
-| Claude Code | `CLAUDE_BASE_URL` | `CLAUDE_TOKEN` | 写入仅当前用户可读的 `~/.config/vpsready/claude_code.env`，并由 `~/.profile` 与 `~/.bashrc` 加载。 |
+| CLI         | Base URL            | Token            | 保存方式                                                                                                |
+| ----------- | ------------------- | ---------------- | ------------------------------------------------------------------------------------------------------- |
+| Codex       | `CODEX_BASE_URL`  | `CODEX_TOKEN`  | 写入`~/.codex/config.toml`，再通过 `codex login --with-api-key` 保存 token。                        |
+| Claude Code | `CLAUDE_BASE_URL` | `CLAUDE_TOKEN` | 写入仅当前用户可读的`~/.config/vpsready/claude_code.env`，并由 `~/.profile` 与 `~/.bashrc` 加载。 |
 
 ```bash
 CODEX_BASE_URL=https://api.example.com/v1 CODEX_TOKEN=your-token ./init.sh
@@ -195,12 +201,12 @@ https://proxy.vvvv.ee
 https://dockerproxy.link
 ```
 
-| 变量 | 默认值 | 说明 |
-|------|--------|------|
-| `DOCKER_REGION` | `global` | `cn` 启用 CN 区域 Docker 安装和镜像配置；`global` 保持原行为。 |
-| `DOCKER_INSTALL_MIRROR` | `Aliyun`（仅 `cn`） | Debian/Ubuntu Docker CE 源，可选 `Aliyun` 或 `AzureChinaCloud`。 |
-| `DOCKER_INSTALLER_URL` | `https://get.docker.com` | `global` 模式使用的官方安装器地址。 |
-| `DOCKER_REGISTRY_MIRROR` | CN 默认镜像列表（仅 `cn`） | 设置单个 `http://` 或 `https://` 地址覆盖默认列表；设置为 `none` 移除 `registry-mirrors`。 |
+| 变量                       | 默认值                      | 说明                                                                                              |
+| -------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------- |
+| `DOCKER_REGION`          | `global`                  | `cn` 启用 CN 区域 Docker 安装和镜像配置；`global` 保持原行为。                                |
+| `DOCKER_INSTALL_MIRROR`  | `Aliyun`（仅 `cn`）     | Debian/Ubuntu Docker CE 源，可选`Aliyun` 或 `AzureChinaCloud`。                               |
+| `DOCKER_INSTALLER_URL`   | `https://get.docker.com`  | `global` 模式使用的官方安装器地址。                                                             |
+| `DOCKER_REGISTRY_MIRROR` | CN 默认镜像列表（仅`cn`） | 设置单个`http://` 或 `https://` 地址覆盖默认列表；设置为 `none` 移除 `registry-mirrors`。 |
 
 检测到命令行或可执行文件位于 `/usr/local/qcloud/` 的腾讯云代理进程时，脚本会自动使用腾讯云 Docker 镜像 `https://mirror.ccs.tencentyun.com`。显式设置 `DOCKER_REGISTRY_MIRROR`（包括 `none`）会覆盖此自动选择。
 
@@ -223,12 +229,12 @@ DOCKER_REGION=cn DOCKER_REGISTRY_MIRROR=none ./init.sh
 
 #### 环境变量
 
-| 变量 | 默认值 | 说明 |
-|------|--------|------|
-| `DOCKER_LOG_MAX_SIZE` | `10m` | 单个日志文件最大大小（如：`10m`, `50m`, `100m`） |
-| `DOCKER_LOG_MAX_FILE` | `3` | 保留的日志文件数量（如：`3`, `5`, `10`） |
-| `DOCKER_LOG_DRIVER` | `json-file` | 日志驱动类型 |
-| `DOCKER_DISABLE_LOG_CONFIG` | `false` | 设为 `true` 跳过 daemon.json 日志与镜像配置 |
+| 变量                          | 默认值        | 说明                                                   |
+| ----------------------------- | ------------- | ------------------------------------------------------ |
+| `DOCKER_LOG_MAX_SIZE`       | `10m`       | 单个日志文件最大大小（如：`10m`, `50m`, `100m`） |
+| `DOCKER_LOG_MAX_FILE`       | `3`         | 保留的日志文件数量（如：`3`, `5`, `10`）         |
+| `DOCKER_LOG_DRIVER`         | `json-file` | 日志驱动类型                                           |
+| `DOCKER_DISABLE_LOG_CONFIG` | `false`     | 设为`true` 跳过 daemon.json 日志与镜像配置           |
 
 #### 配置示例
 
@@ -295,13 +301,13 @@ DOCKER_REGION=cn sh scripts/configure/docker_logs.sh
 
 **环境变量：**
 
-| 变量 | 默认值 | 说明 |
-|------|--------|------|
-| `DOCKER_LOG_MAX_SIZE` | `10m` | 单个日志文件最大大小 |
-| `DOCKER_LOG_MAX_FILE` | `3` | 保留的日志文件数量 |
-| `DOCKER_LOG_DRIVER` | `json-file` | 日志驱动类型 |
-| `DOCKER_REGION` | `global` | 设置为 `cn` 时写入 CN 默认镜像加速器。 |
-| `DOCKER_REGISTRY_MIRROR` | - | 单个自定义镜像地址；设为 `none` 移除镜像配置。 |
+| 变量                       | 默认值        | 说明                                            |
+| -------------------------- | ------------- | ----------------------------------------------- |
+| `DOCKER_LOG_MAX_SIZE`    | `10m`       | 单个日志文件最大大小                            |
+| `DOCKER_LOG_MAX_FILE`    | `3`         | 保留的日志文件数量                              |
+| `DOCKER_LOG_DRIVER`      | `json-file` | 日志驱动类型                                    |
+| `DOCKER_REGION`          | `global`    | 设置为`cn` 时写入 CN 默认镜像加速器。         |
+| `DOCKER_REGISTRY_MIRROR` | -             | 单个自定义镜像地址；设为`none` 移除镜像配置。 |
 
 检测到腾讯云代理进程时，会自动使用腾讯云 Docker 镜像；`DOCKER_REGISTRY_MIRROR` 可覆盖此行为。
 
@@ -315,16 +321,16 @@ bash -c "$(curl -fL "https://raw.githubusercontent.com/benzBrake/VPSReady/main/s
 
 **可选参数：**
 
-| 参数 | 说明 |
-|------|------|
-| `-k` | 显式安装或更新公钥（`NOT_INSTALL_SSH_KEY=true` 时仍跳过） |
-| `-r` | 覆盖现有 `authorized_keys` |
-| `-P` | 设置 `PasswordAuthentication no` |
-| `-A` | 设置 `PubkeyAuthentication yes` |
-| `-M` | 设置 `MaxAuthTries 20` |
-| `-S` | 修改完成后重启 SSH 服务 |
-| `-b <repo_base_url>` | 指定仓库基地址，并自动拼出 `/pub/xiaoji.pub` |
-| `-u <key_url>` | 直接指定公钥下载地址 |
+| 参数                   | 说明                                                        |
+| ---------------------- | ----------------------------------------------------------- |
+| `-k`                 | 显式安装或更新公钥（`NOT_INSTALL_SSH_KEY=true` 时仍跳过） |
+| `-r`                 | 覆盖现有`authorized_keys`                                 |
+| `-P`                 | 设置`PasswordAuthentication no`                           |
+| `-A`                 | 设置`PubkeyAuthentication yes`                            |
+| `-M`                 | 设置`MaxAuthTries 20`                                     |
+| `-S`                 | 修改完成后重启 SSH 服务                                     |
+| `-b <repo_base_url>` | 指定仓库基地址，并自动拼出`/pub/xiaoji.pub`               |
+| `-u <key_url>`       | 直接指定公钥下载地址                                        |
 
 例如：
 
@@ -349,18 +355,18 @@ chmod +x init.sh scripts/install/*.sh scripts/configure/*.sh scripts/tools/*.sh
 
 #### 安装模块
 
-| 模块 | 本地执行 | 主要配置 |
-|------|----------|----------|
-| ACME SSL | `sh scripts/install/acme.sh` | `MIRROR`、`LET_MAIL` |
-| Caddy | `sh scripts/install/caddy.sh` | 使用 Docker Compose，默认数据目录为 `/data/caddy`；支持 `CADDY_DATA_DIR`、`CADDY_COMPOSE_FILE`、`CADDY_IMAGE`、`CADDY_CONFIG_TYPE` |
-| Docker | `sh scripts/install/docker.sh` | `DOCKER_REGION`、`DOCKER_INSTALL_MIRROR`、`DOCKER_REGISTRY_MIRROR`、`DOCKER_*` |
-| MySQL | `sh scripts/install/mysql.sh` | `MYSQL_ROOT_PASSWORD`、`MYSQL_CONTAINER_NAME`、`MYSQL_IMAGE`、`MYSQL_DATA_DIR`、`MYSQL_PORT` |
-| Glow | `sh scripts/install/glow.sh` | `GLOW_VERSION`、`GLOW_INSTALL_DIR`、`GLOW_MIRROR` |
-| mise + Node.js LTS | `sh scripts/install/mise.sh` | `MISE_INSTALL_URL` |
-| Codex CLI | `sh scripts/install/codex.sh` | `NPM_REGISTRY`、`CODEX_BASE_URL`、`CODEX_TOKEN`；默认 npmmirror；安装 `@openai/codex` |
-| Claude Code CLI | `sh scripts/install/claude_code.sh` | `NPM_REGISTRY`、`CLAUDE_BASE_URL`、`CLAUDE_TOKEN`；默认 npmmirror；安装 `@anthropic-ai/claude-code` |
-| tcping | `sh scripts/install/tcping.sh` | `GH_MIRROR`、`MIRROR`、`TCPING_VERSION`、`TCPING_INSTALL_DIR`、`TCPING_FORCE_REINSTALL` |
-| Nginx | `sh scripts/install/nginx.sh` | 使用 Docker Compose，默认数据目录为 `/data/nginx`；支持 `NGINX_DATA_DIR`、`NGINX_COMPOSE_FILE`、`NGINX_IMAGE` |
+| 模块               | 本地执行                              | 主要配置                                                                                                                                    |
+| ------------------ | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| ACME SSL           | `sh scripts/install/acme.sh`        | `MIRROR`、`LET_MAIL`                                                                                                                    |
+| Caddy              | `sh scripts/install/caddy.sh`       | 使用 Docker Compose，默认数据目录为`/data/caddy`；支持 `CADDY_DATA_DIR`、`CADDY_COMPOSE_FILE`、`CADDY_IMAGE`、`CADDY_CONFIG_TYPE` |
+| Docker             | `sh scripts/install/docker.sh`      | `DOCKER_REGION`、`DOCKER_INSTALL_MIRROR`、`DOCKER_REGISTRY_MIRROR`、`DOCKER_*`                                                      |
+| MySQL              | `sh scripts/install/mysql.sh`       | `MYSQL_ROOT_PASSWORD`、`MYSQL_CONTAINER_NAME`、`MYSQL_IMAGE`、`MYSQL_DATA_DIR`、`MYSQL_PORT`                                      |
+| Glow               | `sh scripts/install/glow.sh`        | `GLOW_VERSION`、`GLOW_INSTALL_DIR`、`GLOW_MIRROR`                                                                                     |
+| mise + Node.js LTS | `sh scripts/install/mise.sh`        | `MISE_INSTALL_URL`                                                                                                                        |
+| Codex CLI          | `sh scripts/install/codex.sh`       | `NPM_REGISTRY`、`CODEX_BASE_URL`、`CODEX_TOKEN`；默认 npmmirror；安装 `@openai/codex`                                               |
+| Claude Code CLI    | `sh scripts/install/claude_code.sh` | `NPM_REGISTRY`、`CLAUDE_BASE_URL`、`CLAUDE_TOKEN`；默认 npmmirror；安装 `@anthropic-ai/claude-code`                                 |
+| tcping             | `sh scripts/install/tcping.sh`      | `GH_MIRROR`、`MIRROR`、`TCPING_VERSION`、`TCPING_INSTALL_DIR`、`TCPING_FORCE_REINSTALL`                                           |
+| Nginx              | `sh scripts/install/nginx.sh`       | 使用 Docker Compose，默认数据目录为`/data/nginx`；支持 `NGINX_DATA_DIR`、`NGINX_COMPOSE_FILE`、`NGINX_IMAGE`                        |
 
 MySQL 模块要求 Docker 和 Docker Compose 均已可用；缺少 Docker 时会直接跳过。默认在 `${EZ_DATA}/mysql` 写入 `docker-compose.yml`、`.env` 和数据库数据目录，完成后会输出 root 密码。
 
@@ -406,12 +412,12 @@ sh scripts/install/claude_code.sh
 
 #### 配置模块
 
-| 模块 | 本地执行 | 主要参数或环境变量 |
-|------|----------|-------------------|
-| Docker 端口白名单 | `sh scripts/configure/docker_iptables.sh` | 按脚本提示配置白名单 |
-| Docker 日志轮转 | `sh scripts/configure/docker_logs.sh` | `DOCKER_LOG_MAX_SIZE`、`DOCKER_LOG_MAX_FILE`、`DOCKER_LOG_DRIVER` |
-| SSH 公钥 | `sh scripts/configure/ssh_key.sh -k` | `-r`、`-P`、`-A`、`-M`、`-S`、`-b`、`-u` |
-| SSH 端口 | `sh scripts/configure/ssh_port.sh` | `NOT_CHANGE_SSH_PORT=true` 可跳过改端口 |
+| 模块              | 本地执行                                    | 主要参数或环境变量                                                      |
+| ----------------- | ------------------------------------------- | ----------------------------------------------------------------------- |
+| Docker 端口白名单 | `sh scripts/configure/docker_iptables.sh` | 按脚本提示配置白名单                                                    |
+| Docker 日志轮转   | `sh scripts/configure/docker_logs.sh`     | `DOCKER_LOG_MAX_SIZE`、`DOCKER_LOG_MAX_FILE`、`DOCKER_LOG_DRIVER` |
+| SSH 公钥          | `sh scripts/configure/ssh_key.sh -k`      | `-r`、`-P`、`-A`、`-M`、`-S`、`-b`、`-u`                  |
+| SSH 端口          | `sh scripts/configure/ssh_port.sh`        | `NOT_CHANGE_SSH_PORT=true` 可跳过改端口                               |
 
 例如配置 Docker 日志：
 
@@ -523,6 +529,7 @@ vim /etc/resolv.conf
 ```
 
 添加以下内容：
+
 ```
 nameserver 2001:67c:27e4:15::6411
 nameserver 2001:67c:27e4::64
