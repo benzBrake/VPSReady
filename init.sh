@@ -13,6 +13,7 @@ export EZ_DATA
 INTERACTIVE=false
 MIRROR_ACCELERATION=true
 CONFIGURE_SSH=true
+MAX_AUTH_TRIES=15
 INSTALL_RCLONE=true
 INSTALL_GLOW=true
 INSTALL_MISE=true
@@ -397,6 +398,24 @@ prompt_ssh_key() {
     done
 }
 
+prompt_max_auth_tries() {
+    while :; do
+        prompt_value "SSH MaxAuthTries" "${MAX_AUTH_TRIES}"
+        case "${PROMPT_VALUE}" in
+            ''|*[!0-9]*)
+                warn "Enter a positive integer for MaxAuthTries."
+                ;;
+            0)
+                warn "MaxAuthTries must be greater than zero."
+                ;;
+            *)
+                MAX_AUTH_TRIES="${PROMPT_VALUE}"
+                return 0
+                ;;
+        esac
+    done
+}
+
 prompt_node_agent_clis() {
     if [ "${INSTALL_MISE}" = true ]; then
         prompt_yes_no "Install Codex CLI" "${INSTALL_CODEX}"
@@ -440,6 +459,7 @@ print_summary() {
         printf '    Installs/updates a public key, disables password login, and can set port 33022.\n' >/dev/tty
         printf '    Install/update SSH public key: %s\n' "${INSTALL_SSH_KEY}" >/dev/tty
         printf '    Change SSH port to 33022: %s\n' "${CHANGE_SSH_PORT}" >/dev/tty
+        printf '    SSH MaxAuthTries: %s\n' "${MAX_AUTH_TRIES}" >/dev/tty
     fi
     printf '  MySQL client: %s\n' "${INSTALL_MYSQL}" >/dev/tty
     printf '  Docker: %s\n' "${INSTALL_DOCKER}" >/dev/tty
@@ -514,6 +534,7 @@ run_interactive_wizard() {
         else
             NOT_CHANGE_SSH_PORT=true
         fi
+        prompt_max_auth_tries
     fi
 
     prompt_email
@@ -692,7 +713,7 @@ fi
 
 if [ "${INTERACTIVE}" = true ]; then
     run_interactive_wizard
-    export SSHKEY NOT_INSTALL_SSH_KEY NOT_CHANGE_SSH_PORT
+    export SSHKEY NOT_INSTALL_SSH_KEY NOT_CHANGE_SSH_PORT MAX_AUTH_TRIES
 fi
 
 export DOCKER_REGION DOCKER_INSTALL_MIRROR
@@ -905,6 +926,10 @@ else
                     fi
                 fi
             fi
+            if [ -f "${EZ_DATA}/.profile" ]; then
+                sed -i '/^export MAX_AUTH_TRIES=/d' "${EZ_DATA}/.profile"
+            fi
+            echo "export MAX_AUTH_TRIES=${MAX_AUTH_TRIES}" >>"${EZ_DATA}/.profile"
         fi
 
         # 处理 SSHKEY 环境变量，仅用于当前初始化，避免覆盖现有公钥文件

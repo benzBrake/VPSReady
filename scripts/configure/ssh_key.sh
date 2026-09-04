@@ -6,7 +6,7 @@ usage() {
     echo "  -r    Forcefully overwrite the authorized_keys file with the new public key"
     echo "  -P    Set PasswordAuthentication to no"
     echo "  -A    Set PubkeyAuthentication to yes"
-    echo "  -M    Set MaxAuthTries to 20"
+    echo "  -M    Set MaxAuthTries (default: 15, or MAX_AUTH_TRIES)"
     echo "  -S    Restart the SSH service after updating sshd_config"
     echo "  -b    Set repository base URL, used to derive pub/xiaoji.pub"
     echo "  -u    Set public key download URL directly"
@@ -203,7 +203,7 @@ fi
 
 if [ "${SET_MAX_AUTH_TRIES}" = true ]; then
     echo "Change maxAuthTries"
-    ensure_sshd_option "MaxAuthTries" "20"
+    ensure_sshd_option "MaxAuthTries" "${MAX_AUTH_TRIES:-15}"
 fi
 
 if [ "${RESTART_SSH}" = true ]; then

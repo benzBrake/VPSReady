@@ -43,3 +43,8 @@ tmp/
 # 数据库文件（按需）
 *.db
 *.sqlite
+
+# Agents
+.claude
+.zcode
+.codex
